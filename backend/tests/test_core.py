@@ -705,3 +705,77 @@ async def test_named_business_scenario_suite_passes_in_full():
     detail = "\n".join(f"{c['id']}: {c['failures']}" for c in failing)
     assert not failing, f"{len(failing)} scenario(s) failed:\n{detail}"
     assert result["total"] == 15
+
+
+# ---- hallucination guard: the mandatory "AI limitations" evidence ---------
+
+async def test_hallucination_guard_records_when_rules_overrule_the_llm():
+    """Concrete evidence, not a claim: when the LLM disagrees with a confident
+    rule match, the rule wins and it gets logged for inspection."""
+    from app.safety.hallucination_guard import HallucinationGuardLog
+
+    guard = HallucinationGuardLog()
+    mgr = ConversationManager(
+        metrics=MetricsEngine(),
+        groq=GroqProvider(api_key=""),
+        voice_mode="SIMULATED",
+        hallucination_guard=guard,
+    )
+    await mgr.start("EN-1002", voice_mode="SIMULATED")
+    await mgr.handle_utterance("Yes that's fine")
+
+    # Force a disagreeing hint the way the real Groq path would produce one,
+    # bypassing the network call but exercising the exact same extraction path.
+    async def fake_enrich(context):
+        return {"field": "property_type", "value": "unit", "confidence": 0.9}
+
+    mgr.groq.enrich_turn = fake_enrich
+    await mgr.handle_utterance("It's a house")
+
+    assert guard.entries, "a disagreement should have been recorded"
+    entry = guard.entries[0]
+    assert entry["field"] == "property_type"
+    assert entry["rule_value"] == "house"
+    assert entry["llm_suggested"] == "unit"
+    assert entry["outcome"] == "rule_kept_llm_overruled"
+
+    summary = guard.summary()
+    assert summary["total_overrules"] == 1
+    assert summary["by_field"]["property_type"] == 1
+
+
+async def test_hallucination_guard_stays_silent_when_llm_agrees():
+    from app.safety.hallucination_guard import HallucinationGuardLog
+
+    guard = HallucinationGuardLog()
+    mgr = ConversationManager(
+        metrics=MetricsEngine(),
+        groq=GroqProvider(api_key=""),
+        voice_mode="SIMULATED",
+        hallucination_guard=guard,
+    )
+    await mgr.start("EN-1002", voice_mode="SIMULATED")
+    await mgr.handle_utterance("Yes that's fine")
+    await mgr.handle_utterance("It's a house")
+
+    assert not guard.entries, "no disagreement occurred, nothing should be logged"
+
+
+# ---- free-text extraction must reject hedges, not capture them verbatim ----
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "honestly no idea",
+        "not sure, my partner handles the bills",
+        "we're with someone, I forget the name",
+        "dunno",
+        "I don't know who it's with",
+    ],
+)
+def test_free_text_rejects_hedges_instead_of_capturing_them_as_the_answer(text):
+    """Found by the A/B testing framework: a customer hedge like 'honestly no
+    idea' was being written into the payload verbatim as a supplier name,
+    because free-text extraction accepted any non-trivial string."""
+    step = _step("current_supplier")
+    assert FieldExtractor().extract(text, step)["value"] is None

@@ -14,7 +14,9 @@ from app.journey.engine import JourneyEngine
 from app.journey.submitter import JourneySubmitClient
 from app.metrics.engine import MetricsEngine
 from app.evaluation.scenarios import run_suite
+from app.experimentation.ab_test import run_all as run_ab_tests
 from app.ml.scorer import LeadScorer
+from app.safety.hallucination_guard import HallucinationGuardLog
 from app.models.enums import HandoffStatus
 from app.services.demos import SCENARIOS
 from app.services.dnc import DNCService
@@ -40,6 +42,7 @@ handoffs = HandoffQueue(store)
 recorder = CallRecorder()
 dnc = DNCService()
 scorer = LeadScorer()
+hallucination_guard = HallucinationGuardLog()
 sessions: dict[str, ConversationManager] = {}
 
 
@@ -52,6 +55,7 @@ def new_manager(voice_mode: str) -> ConversationManager:
         store=store,
         recorder=recorder,
         submitter=JourneySubmitClient(local_handler=sandbox),
+        hallucination_guard=hallucination_guard,
     )
 
 
@@ -156,6 +160,18 @@ async def model_reload():
     return scorer.reload()
 
 
+@app.get("/api/safety/hallucination-guard")
+async def hallucination_guard_report():
+    """Every turn this session where the LLM's suggested field value
+    disagreed with the deterministic rule match, and the rule was kept.
+    Concrete evidence for the mandatory 'understanding of hallucination
+    risk' capability - not a claim, a running log."""
+    return {
+        "summary": hallucination_guard.summary(),
+        "entries": hallucination_guard.recent(),
+    }
+
+
 @app.get("/api/evaluation")
 async def run_evaluation():
     """The 15 named business scenarios, driven end to end through a fresh
@@ -164,6 +180,15 @@ async def run_evaluation():
     scores the intent engine and field extractor in isolation rather than a
     full call outcome."""
     return await run_suite()
+
+
+@app.get("/api/experiments/ab-test")
+async def ab_test_report():
+    """Script A/B testing framework: two phrasings of the same field's
+    question, run through the real extraction/confidence pipeline against a
+    documented response-panel hypothesis, with a declared winning metric.
+    See config/script_variants.json for the hypothesis behind each panel."""
+    return run_ab_tests()
 
 
 @app.get("/api/journey")

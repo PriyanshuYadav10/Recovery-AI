@@ -370,6 +370,47 @@ or the escalation engine. Exists purely so a presenter can recover instantly
 if the mic drops or an LLM call hiccups mid-demo. Never shown to a customer,
 never wired into the real call path.
 
+## AI safety: hallucination guard (mandatory JD capability, made visible)
+
+The field extractor is rules-first: a confident deterministic match beats a
+disagreeing LLM hint outright. That mechanism existed already; what didn't
+exist was any way to see it happen. `HallucinationGuardLog` now records every
+turn where the model suggested one value and the rule kept a different one -
+timestamp, field, what the model said, what was kept - live at
+`GET /api/safety/hallucination-guard`.
+
+This isn't hypothetical: the first live run against the real Groq model
+caught it for real - the model read *"Both electricity and gas"* and
+suggested `electricity`; the rule kept `both`, correctly, and it's on record.
+
+## Script A/B testing framework
+
+`app/experimentation/ab_test.py` compares two phrasings of the same
+field's question by running each variant's response panel through the real
+`FieldExtractor` + `ConfidenceEngine`, and reports first-try capture rate,
+clarification rate, and average confidence per variant, with a declared
+winner.
+
+```bash
+cd backend && PYTHONPATH=. python -m app.experimentation.ab_test
+```
+
+Also live at `GET /api/experiments/ab-test`. Two experiments ship today:
+
+| Experiment | A | B | Winner |
+|---|---|---|---|
+| Naming example suppliers in the question | "Who is your current supplier?" | "...AGL, Origin, EnergyAustralia, Red Energy, or someone else?" | B — 100% vs 62% first-try capture |
+| Direct vs. open household-size phrasing | "Tell me about your household" | "How many people live in the household?" | B — 100% vs 25% first-try capture |
+
+**Honesty note:** each variant's response panel is a stated hypothesis
+(`config/script_variants.json`) about how that phrasing shifts customer
+answers, not observed live-call data - there's no live traffic yet to test
+against. Swap in real transcribed responses per variant the moment they
+exist; nothing else in the framework needs to change. Building this harness
+directly found a real bug: free-text extraction was accepting hedges like
+*"honestly no idea"* as a literal supplier name instead of asking again —
+fixed, and locked in with a regression test.
+
 ## Known limitations
 
 - The Twilio leg has not been placed against live credentials; everything either side of

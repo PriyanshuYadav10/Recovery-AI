@@ -1,0 +1,73 @@
+{
+  "description": "A/B test definitions for field-collection scripts. Each experiment names two phrasings of the same question and a documented assumption about how each would shift customer responses - the assumption is the honest part: there is no live traffic to A/B test against yet, so the response panels model a specific, stated hypothesis rather than pretending to be observed data. Retire the assumption the moment real call data exists.",
+  "experiments": [
+    {
+      "id": "supplier_examples",
+      "field": "current_supplier",
+      "metric_goal": "first-try capture rate and average field confidence",
+      "hypothesis": "Naming example suppliers in the question primes the customer to answer with a clean brand name instead of a vague or hedged answer.",
+      "variants": {
+        "A_no_examples": {
+          "script": "Who is your current energy supplier?",
+          "assumed_responses": [
+            "AGL",
+            "it's Origin",
+            "umm, I think it's the one with the red logo",
+            "not sure, my partner handles the bills",
+            "Origin Energy",
+            "we're with someone, I forget the name",
+            "EnergyAustralia",
+            "honestly no idea"
+          ]
+        },
+        "B_with_examples": {
+          "script": "Who is your current energy supplier - AGL, Origin, EnergyAustralia, Red Energy, or someone else?",
+          "assumed_responses": [
+            "AGL",
+            "Origin",
+            "EnergyAustralia",
+            "Red Energy",
+            "it's Alinta actually",
+            "AGL I think",
+            "Origin Energy",
+            "Red Energy, yeah"
+          ]
+        }
+      }
+    },
+    {
+      "id": "household_size_phrasing",
+      "field": "household_size",
+      "metric_goal": "first-try capture rate on a numeric field",
+      "hypothesis": "Asking for a number directly yields a cleaner numeric answer than an open, conversational phrasing that invites a descriptive (non-numeric) reply.",
+      "variants": {
+        "A_open": {
+          "script": "Tell me a bit about your household - who's living there?",
+          "assumed_responses": [
+            "just me",
+            "me and my partner",
+            "there's four of us, two kids",
+            "my family",
+            "it's just my husband and I",
+            "a full house, quite a few of us",
+            "three",
+            "myself and my roommate"
+          ]
+        },
+        "B_direct": {
+          "script": "How many people live in the household?",
+          "assumed_responses": [
+            "two",
+            "4",
+            "just one, me",
+            "three of us",
+            "5",
+            "two people",
+            "one",
+            "four"
+          ]
+        }
+      }
+    }
+  ]
+}

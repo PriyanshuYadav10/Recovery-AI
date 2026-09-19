@@ -26,6 +26,7 @@ from app.models.schemas import (
     WhyAction,
     utc_now,
 )
+from app.safety.hallucination_guard import HallucinationGuardLog
 from app.services.dnc import DNCService
 from app.services.handoff_queue import HandoffQueue
 from app.services.store import Store
@@ -43,8 +44,10 @@ class ConversationManager:
         store: Optional[Store] = None,
         recorder: Optional[CallRecorder] = None,
         submitter: Optional[JourneySubmitClient] = None,
+        hallucination_guard: Optional[HallucinationGuardLog] = None,
     ):
         self.metrics = metrics
+        self.hallucination_guard = hallucination_guard
         self.groq = groq or GroqProvider()
         self.journey = JourneyEngine()
         self.submission = JourneySubmissionService(self.journey)
@@ -361,6 +364,7 @@ class ConversationManager:
                     candidates.append(step_def)
             for step_def in reversed(candidates):
                 extracted = self.extractor.extract(text, step_def, llm_hint if llm_hint else None)
+                self._check_hallucination_guard(extracted, step_def["id"], text)
                 if extracted.get("value") is None:
                     continue
                 old = self.fields.get(step_def["id"])
@@ -389,6 +393,7 @@ class ConversationManager:
             pass
 
         extracted = self.extractor.extract(text, step, llm_hint if llm_hint else None)
+        self._check_hallucination_guard(extracted, step["id"], text)
         field_conf = float(extracted.get("confidence", 0.2))
         snap, low, reason = self.confidence.evaluate(
             speech=speech_confidence,
@@ -746,6 +751,36 @@ class ConversationManager:
             ended=True,
             intent=signal.value.lower(),
         )
+
+    def _check_hallucination_guard(self, extracted: dict, field_id: str, text: str) -> None:
+        """If the rule-based extractor kept its answer over a disagreeing LLM
+        hint, that's the mandatory hallucination-risk safeguard firing for
+        real. Log it so it can be shown, not just claimed."""
+        disagreed = extracted.get("llm_disagreed_with")
+        if disagreed is None:
+            return
+        self.audit.emit(
+            "LLM_HALLUCINATION_PREVENTED",
+            self.call_id,
+            field=field_id,
+            rule_value=extracted.get("value"),
+            llm_suggested=disagreed,
+        )
+        self._why(
+            "OVERRULE_LLM",
+            f"The model suggested '{disagreed}' for {field_id}, but a confident "
+            f"rule match already said '{extracted.get('value')}' - the rule was kept.",
+            "safety",
+        )
+        if self.hallucination_guard is not None:
+            self.hallucination_guard.record(
+                call_id=self.call_id,
+                field=field_id,
+                rule_value=extracted.get("value"),
+                llm_value=disagreed,
+                rule_confidence=float(extracted.get("confidence", 0.0)),
+                customer_text=text,
+            )
 
     def _transcript_words(self) -> int:
         return sum(len(str(t.get("text", "")).split()) for t in self.transcript)

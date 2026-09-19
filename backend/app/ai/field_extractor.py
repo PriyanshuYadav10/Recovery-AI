@@ -156,6 +156,18 @@ class FieldExtractor:
             return self._miss(field_id)
 
         # text
+        # A free-text field will happily accept any non-trivial string as a
+        # literal value - "honestly no idea" would otherwise be captured as
+        # a supplier name. Reject clear hedges/non-answers before that, so
+        # they fall through to a clarification re-ask instead of the
+        # customer's own confusion being written into the payload verbatim.
+        if re.search(
+            r"\b(no idea|not sure|i don'?t know|dunno|no clue|not certain|"
+            r"can'?t remember|i forget|no name comes to mind)\b",
+            lowered,
+        ):
+            return self._miss(field_id)
+
         cleaned = re.sub(r"[^\w\s&\-]", "", raw).strip()
         if len(cleaned) >= validation.get("min_length", 1):
             # strip filler
