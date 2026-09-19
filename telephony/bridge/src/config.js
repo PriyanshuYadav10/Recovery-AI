@@ -12,7 +12,9 @@ function env(name, fallback = '') {
 
 export const config = {
   port: Number(process.env.PORT || 3100),
-  publicBaseUrl: process.env.PUBLIC_BASE_URL || '',
+  // Render sets RENDER_EXTERNAL_URL automatically; fall back to it so Twilio
+  // webhooks resolve without hand-configuring the URL on every deploy.
+  publicBaseUrl: process.env.PUBLIC_BASE_URL || process.env.RENDER_EXTERNAL_URL || '',
   recoveryApiUrl: (process.env.RECOVERY_API_URL || 'http://127.0.0.1:8000').replace(/\/$/, ''),
   pipeline: (process.env.VOICE_PIPELINE || 'gather').toLowerCase(),
   humanQueueNumber: process.env.HUMAN_QUEUE_NUMBER || '',

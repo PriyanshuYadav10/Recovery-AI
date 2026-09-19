@@ -2,7 +2,13 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiClient {
-  ApiClient({this.baseUrl = 'http://127.0.0.1:8000'});
+  ApiClient({String? baseUrl}) : baseUrl = baseUrl ?? _defaultBaseUrl;
+
+  // Set at build time with --dart-define=API_BASE_URL=https://your-backend.example.com
+  static const String _defaultBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://127.0.0.1:8000',
+  );
 
   final String baseUrl;
 
