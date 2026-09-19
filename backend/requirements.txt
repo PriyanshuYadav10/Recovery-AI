@@ -4,6 +4,10 @@ uvicorn[standard]==0.34.0
 httpx==0.28.1
 pydantic==2.10.4
 python-dotenv==1.0.1
+python-multipart==0.0.20
+
+# Lead sheet upload (CSV/XLSX parsing)
+openpyxl==3.1.5
 
 # Lead scoring model (app/ml) and the offline eval harness (evals/)
 # numpy is pinned below 2.0 because this venv runs Python 3.9, where numpy

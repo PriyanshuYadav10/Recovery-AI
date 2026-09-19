@@ -36,6 +36,15 @@ CREATE TABLE IF NOT EXISTS submissions (
     payload TEXT,
     receipt TEXT
 );
+CREATE TABLE IF NOT EXISTS leads (
+    lead_id TEXT PRIMARY KEY,
+    raw TEXT,
+    status TEXT,
+    last_call_id TEXT,
+    last_outcome TEXT,
+    uploaded_at TEXT,
+    updated_at TEXT
+);
 """
 
 
@@ -130,6 +139,72 @@ class Store:
                     json.dumps(receipt, default=str),
                 ),
             )
+
+    # ------------------------------------------------ uploaded lead sheets
+
+    def upsert_leads(self, leads: list[dict[str, Any]]) -> None:
+        """Adds/refreshes uploaded leads. Re-uploading a sheet updates the
+        contact details but never resets a lead already mid-workflow -
+        call status and history survive a corrected re-upload."""
+        now = utc_now()
+        with self._lock, self._connect() as conn:
+            for lead in leads:
+                conn.execute(
+                    """INSERT INTO leads (lead_id, raw, status, last_call_id, last_outcome, uploaded_at, updated_at)
+                       VALUES (?, ?, 'NOT_CALLED', NULL, NULL, ?, ?)
+                       ON CONFLICT(lead_id) DO UPDATE SET
+                         raw=excluded.raw,
+                         updated_at=excluded.updated_at""",
+                    (lead["lead_id"], json.dumps(lead, default=str), now, now),
+                )
+
+    def list_uploaded_leads(self) -> list[dict[str, Any]]:
+        """Plain Lead-shaped dicts (no status) - for the call-start pipeline,
+        which only needs contact details and journey context."""
+        with self._connect() as conn:
+            rows = conn.execute("SELECT raw FROM leads").fetchall()
+        return [json.loads(r["raw"]) for r in rows]
+
+    def list_leads_with_status(self) -> list[dict[str, Any]]:
+        """The CRM view: contact details plus where each lead stands."""
+        with self._connect() as conn:
+            rows = conn.execute(
+                "SELECT raw, status, last_call_id, last_outcome, uploaded_at, updated_at "
+                "FROM leads ORDER BY uploaded_at DESC"
+            ).fetchall()
+        out = []
+        for r in rows:
+            item = json.loads(r["raw"])
+            item["status"] = r["status"] or "NOT_CALLED"
+            item["last_call_id"] = r["last_call_id"]
+            item["last_outcome"] = r["last_outcome"]
+            item["uploaded_at"] = r["uploaded_at"]
+            item["updated_at"] = r["updated_at"]
+            out.append(item)
+        return out
+
+    def update_lead_status(
+        self, lead_id: str, status: str, call_id: Optional[str] = None, outcome: Optional[str] = None
+    ) -> None:
+        """No-op for a lead_id the leads table has never seen (e.g. the
+        built-in synthetic demo leads) - only uploaded leads are tracked."""
+        with self._lock, self._connect() as conn:
+            conn.execute(
+                """UPDATE leads SET status = ?,
+                     last_call_id = COALESCE(?, last_call_id),
+                     last_outcome = COALESCE(?, last_outcome),
+                     updated_at = ?
+                   WHERE lead_id = ?""",
+                (status, call_id, outcome, utc_now(), lead_id),
+            )
+
+    def delete_lead(self, lead_id: str) -> None:
+        with self._lock, self._connect() as conn:
+            conn.execute("DELETE FROM leads WHERE lead_id = ?", (lead_id,))
+
+    def clear_leads(self) -> None:
+        with self._lock, self._connect() as conn:
+            conn.execute("DELETE FROM leads")
 
     def list_submissions(self, limit: int = 50) -> list[dict[str, Any]]:
         with self._connect() as conn:

@@ -1,15 +1,18 @@
 from __future__ import annotations
 
+import io
+import uuid
 from typing import Any, Optional
 
-from fastapi import FastAPI, HTTPException, Request, Response, WebSocket, WebSocketDisconnect
+import pandas as pd
+from fastapi import FastAPI, File, HTTPException, Request, Response, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from app.ai.conversation_manager import ConversationManager
 from app.ai.groq_provider import GroqProvider
 from app.audit.recorder import CallRecorder
-from app.core.config import BRIDGE_BASE_URL, HUMAN_QUEUE_NUMBER, JOURNEY_SUBMIT_URL
+from app.core.config import BRIDGE_BASE_URL, DATA_DIR, HUMAN_QUEUE_NUMBER, JOURNEY_SUBMIT_URL
 from app.journey.engine import JourneyEngine
 from app.journey.submitter import JourneySubmitClient
 from app.metrics.engine import MetricsEngine
@@ -35,9 +38,9 @@ app.add_middleware(
 
 metrics = MetricsEngine()
 groq = GroqProvider()
-journey = JourneyEngine()
-sandbox = JourneySandbox(journey)
 store = Store()
+journey = JourneyEngine(leads_store=store)
+sandbox = JourneySandbox(journey)
 handoffs = HandoffQueue(store)
 recorder = CallRecorder()
 dnc = DNCService()
@@ -114,6 +117,116 @@ async def health():
 @app.get("/api/leads")
 async def list_leads():
     return [l.model_dump() for l in journey.load_leads()]
+
+
+# --------------------------------------------------- uploaded lead sheets
+
+_COLUMN_ALIASES = {
+    "lead_id": {"lead_id", "id", "leadid", "customer_id"},
+    "first_name": {"first_name", "firstname", "first"},
+    "last_name": {"last_name", "lastname", "last", "surname"},
+    "phone": {"phone", "phone_number", "mobile", "contact_number", "number"},
+    "email": {"email", "email_address"},
+}
+
+
+def _parse_lead_sheet(filename: str, content: bytes) -> list[dict[str, Any]]:
+    lower = (filename or "").lower()
+    try:
+        if lower.endswith(".csv"):
+            df = pd.read_csv(io.BytesIO(content), dtype=str)
+        elif lower.endswith((".xlsx", ".xls")):
+            df = pd.read_excel(io.BytesIO(content), dtype=str)
+        else:
+            raise HTTPException(400, "Upload a .csv or .xlsx file")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(400, f"Could not read the sheet: {exc}") from exc
+
+    df = df.fillna("")
+    canonical: dict[str, str] = {}
+    for col in df.columns:
+        key = str(col).strip().lower().replace(" ", "_")
+        for field, aliases in _COLUMN_ALIASES.items():
+            if key in aliases and field not in canonical:
+                canonical[key] = field
+    df = df.rename(columns=canonical)
+
+    if "phone" not in df.columns:
+        raise HTTPException(400, "The sheet needs a 'phone' column (or Phone/Mobile/Contact Number).")
+
+    leads: list[dict[str, Any]] = []
+    for _, row in df.iterrows():
+        phone = str(row.get("phone", "")).strip()
+        if not phone:
+            continue
+        name_bits = [str(row.get("first_name", "")).strip(), str(row.get("last_name", "")).strip()]
+        if not any(name_bits) and "name" in df.columns:
+            parts = str(row.get("name", "")).strip().split(" ", 1)
+            name_bits = [parts[0], parts[1] if len(parts) > 1 else ""]
+        lead_id = str(row.get("lead_id", "")).strip() or f"UP-{uuid.uuid4().hex[:8].upper()}"
+        leads.append(
+            {
+                "lead_id": lead_id,
+                "first_name": name_bits[0] or "Unknown",
+                "last_name": name_bits[1],
+                "phone": phone,
+                "email": str(row.get("email", "")).strip(),
+                "journey": "energy",
+                "last_completed_step": None,
+                "dnc_listed": False,
+                "known_fields": {},
+                "scenario_hint": None,
+                "dropped_at": None,
+                "source": "uploaded_sheet",
+                "prior_attempts": 0,
+            }
+        )
+    if not leads:
+        raise HTTPException(400, "No rows with a phone number were found in that sheet.")
+    return leads
+
+
+@app.post("/api/leads/upload-sample")
+async def upload_sample_leads():
+    """One-click demo list: the same sample_leads.csv template, loaded
+    without a file picker round-trip, so the CRM flow can be tried
+    immediately."""
+    content = (DATA_DIR / "sample_leads.csv").read_bytes()
+    leads = _parse_lead_sheet("sample_leads.csv", content)
+    store.upsert_leads(leads)
+    return {"uploaded": len(leads), "leads": store.list_leads_with_status()}
+
+
+@app.post("/api/leads/upload")
+async def upload_leads(file: UploadFile = File(...)):
+    """Parses a CSV/XLSX of leads and adds them to the callable list.
+
+    Re-uploading the same lead_id refreshes contact details without
+    resetting a lead's call status - see Store.upsert_leads.
+    """
+    content = await file.read()
+    leads = _parse_lead_sheet(file.filename or "", content)
+    store.upsert_leads(leads)
+    return {"uploaded": len(leads), "leads": store.list_leads_with_status()}
+
+
+@app.get("/api/leads/uploaded")
+async def list_uploaded_leads():
+    return store.list_leads_with_status()
+
+
+@app.delete("/api/leads/uploaded/{lead_id}")
+async def delete_uploaded_lead(lead_id: str):
+    store.delete_lead(lead_id)
+    return {"ok": True}
+
+
+@app.delete("/api/leads/uploaded")
+async def clear_uploaded_leads():
+    store.clear_leads()
+    return {"ok": True}
 
 
 @app.get("/api/leads/prioritised")
@@ -295,6 +408,7 @@ async def dial_call(body: DialRequest):
 
     gate = dnc.check(lead)
     if not gate["eligible"]:
+        store.update_lead_status(body.lead_id, "BLOCKED_DNC", outcome=gate.get("reason"))
         return {
             "dialled": False,
             "blocked_by": "DNC",
@@ -305,6 +419,14 @@ async def dial_call(body: DialRequest):
     mgr = new_manager(body.voice_mode)
     result = await mgr.start(body.lead_id, voice_mode=body.voice_mode, phone_override=body.phone)
     sessions[mgr.call_id] = mgr
+    dial_status = (mgr.dial_result or {}).get("status")
+    if dial_status in {"bridge_unavailable", "dial_failed"}:
+        store.update_lead_status(
+            body.lead_id, "FAILED", call_id=mgr.call_id,
+            outcome=str((mgr.dial_result or {}).get("error") or dial_status),
+        )
+    else:
+        store.update_lead_status(body.lead_id, "CALLING", call_id=mgr.call_id)
     return {
         "dialled": True,
         "call_id": mgr.call_id,

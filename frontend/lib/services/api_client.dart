@@ -18,6 +18,45 @@ class ApiClient {
     return jsonDecode(r.body) as List<dynamic>;
   }
 
+  // ---- uploaded lead sheets (CRM list) -----------------------------------
+
+  /// Loads a bundled demo lead sheet with one click, no file picker needed.
+  Future<Map<String, dynamic>> uploadSampleLeads() async {
+    final r = await http.post(_u('/api/leads/upload-sample'));
+    if (r.statusCode >= 400) throw Exception(r.body);
+    return jsonDecode(r.body) as Map<String, dynamic>;
+  }
+
+  /// Uploads a CSV/XLSX of leads. Re-uploading the same lead_id refreshes
+  /// contact details without resetting that lead's call status.
+  Future<Map<String, dynamic>> uploadLeadSheet({
+    required String filename,
+    required List<int> bytes,
+  }) async {
+    final req = http.MultipartRequest('POST', _u('/api/leads/upload'))
+      ..files.add(http.MultipartFile.fromBytes('file', bytes, filename: filename));
+    final streamed = await req.send();
+    final body = await streamed.stream.bytesToString();
+    if (streamed.statusCode >= 400) throw Exception(body);
+    return jsonDecode(body) as Map<String, dynamic>;
+  }
+
+  Future<List<dynamic>> uploadedLeads() async {
+    final r = await http.get(_u('/api/leads/uploaded'));
+    if (r.statusCode >= 400) throw Exception(r.body);
+    return jsonDecode(r.body) as List<dynamic>;
+  }
+
+  Future<void> deleteUploadedLead(String leadId) async {
+    final r = await http.delete(_u('/api/leads/uploaded/$leadId'));
+    if (r.statusCode >= 400) throw Exception(r.body);
+  }
+
+  Future<void> clearUploadedLeads() async {
+    final r = await http.delete(_u('/api/leads/uploaded'));
+    if (r.statusCode >= 400) throw Exception(r.body);
+  }
+
   Future<Map<String, dynamic>> metrics() async {
     final r = await http.get(_u('/api/metrics'));
     return jsonDecode(r.body) as Map<String, dynamic>;

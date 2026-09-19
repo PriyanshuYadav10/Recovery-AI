@@ -1,38 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// CIMET / econnex handout design system.
+/// CIMET / econnex design system - light theme.
 ///
-/// Every colour here was sampled from CIMET-Hackathon-Handout-v3.pdf, so the
-/// console reads as part of the same brief rather than a generic dark theme.
-/// The system is deliberately two-tone: deep indigo and a single orange. There
-/// is no second bright accent - emphasis comes from weight and intensity, which
-/// is what makes the handout look composed rather than busy.
+/// Same brand accent as the handout (the one CIMET orange), rebuilt on a
+/// light, plain-paper surface instead of the handout's own dark cover, so the
+/// app reads as calm and easy to scan rather than as a technical dashboard.
+/// Still two-tone on purpose: one accent colour, everything else is ink,
+/// grey, or a rule - nothing competes with the accent for attention.
 class AppTheme {
   // Surfaces
-  static const bg = Color(0xFF101124);
-  static const panel = Color(0xFF181A3D);
-  static const panelAlt = Color(0xFF22244A);
+  static const bg = Color(0xFFFFFFFF);
+  static const panel = Color(0xFFF6F7FB);
+  static const panelAlt = Color(0xFFEDEEF6);
 
   // The one accent
   static const accent = Color(0xFFFF5B3D);
 
   // Type
-  static const ink = Color(0xFFFFFFFF);
-  static const text = Color(0xFFDCDCF2);
-  static const body = Color(0xFFC3C5E0);
-  static const muted = Color(0xFFA9ABCB);
-  static const label = Color(0xFF8385AB);
-  static const faint = Color(0xFF6A6C92);
-  static const numeral = Color(0xFF5C5E82);
+  static const ink = Color(0xFF15161F);
+  static const text = Color(0xFF23243A);
+  static const body = Color(0xFF4B4C66);
+  static const muted = Color(0xFF6C6D87);
+  static const label = Color(0xFF80829B);
+  static const faint = Color(0xFF9B9CB3);
+  static const numeral = Color(0xFFAEAFC4);
 
   // Rules
-  static const line = Color(0xFF2B2D55);
-  static const lineSoft = Color(0xFF35376A);
+  static const line = Color(0xFFE3E4EE);
+  static const lineSoft = Color(0xFFD2D3E3);
 
-  /// Semantic aliases. The handout has no green or amber, so status is carried
-  /// by intensity: orange demands attention, light text is neutral, faint
-  /// recedes.
+  /// Semantic aliases. There is no second bright colour by design - the
+  /// accent carries every "pay attention" moment, and everything else is a
+  /// shade of ink, so status is never a colour quiz.
   static const alert = accent;
   static const warn = accent;
   static const danger = accent;
@@ -74,14 +74,16 @@ class AppTheme {
         color: body,
       );
 
-  /// The handout's signature: monospace, uppercase, very wide tracking.
+  /// A quieter, plain-language label. Kept from the mono handout style only
+  /// where a short tag genuinely helps (a status word); everywhere else uses
+  /// plain sentence case now instead of tracked-out capitals.
   static TextStyle mono(
     double size, {
     Color color = label,
-    double tracking = 2.6,
-    FontWeight weight = FontWeight.w500,
+    double tracking = 0.4,
+    FontWeight weight = FontWeight.w600,
   }) =>
-      GoogleFonts.jetBrainsMono(
+      GoogleFonts.inter(
         fontSize: size,
         color: color,
         letterSpacing: tracking,
@@ -89,22 +91,21 @@ class AppTheme {
       );
 
   static TextStyle figure(double size, {Color color = ink}) =>
-      GoogleFonts.jetBrainsMono(
+      GoogleFonts.inter(
         fontSize: size,
         color: color,
         fontWeight: FontWeight.w700,
-        letterSpacing: 0.5,
       );
 
-  static ThemeData dark() {
-    final base = ThemeData.dark(useMaterial3: true);
+  static ThemeData light() {
+    final base = ThemeData.light(useMaterial3: true);
     return base.copyWith(
       scaffoldBackgroundColor: bg,
       canvasColor: bg,
       dividerColor: line,
-      colorScheme: const ColorScheme.dark(
+      colorScheme: const ColorScheme.light(
         primary: accent,
-        onPrimary: bg,
+        onPrimary: Colors.white,
         secondary: body,
         surface: panel,
         onSurface: text,
@@ -114,6 +115,7 @@ class AppTheme {
           .apply(bodyColor: body, displayColor: ink),
       appBarTheme: AppBarTheme(
         backgroundColor: bg,
+        foregroundColor: ink,
         elevation: 0,
         titleTextStyle: heading(18),
       ),
@@ -121,7 +123,7 @@ class AppTheme {
         color: panel,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(10),
           side: const BorderSide(color: line),
         ),
       ),
@@ -130,31 +132,33 @@ class AppTheme {
         fillColor: panel,
         hintStyle: prose(13).copyWith(color: faint),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: line),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: line),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(4),
-          borderSide: const BorderSide(color: accent),
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: accent, width: 1.5),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: accent,
-          foregroundColor: bg,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-          textStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13),
+          foregroundColor: ink,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          textStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 14),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: text,
           side: const BorderSide(color: lineSoft),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         ),
       ),
       textButtonTheme: TextButtonThemeData(

@@ -16,7 +16,6 @@ class _LandingScreenState extends State<LandingScreen> {
   final api = ApiClient();
   Map<String, dynamic> metrics = {};
   Map<String, dynamic> health = {};
-  Map<String, dynamic> queue = {};
   String? error;
 
   final phoneCtrl = TextEditingController();
@@ -34,12 +33,10 @@ class _LandingScreenState extends State<LandingScreen> {
     try {
       final h = await api.health();
       final m = await api.metrics();
-      final q = await api.prioritisedLeads();
       if (!mounted) return;
       setState(() {
         health = h;
         metrics = m;
-        queue = q;
         error = null;
       });
     } catch (_) {
@@ -117,8 +114,6 @@ class _LandingScreenState extends State<LandingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final groq = (health['groq'] as Map?) ?? {};
-    final vsManual = (metrics['vs_manual'] as Map?)?.cast<String, dynamic>() ?? {};
     final waiting = ((health['handoffs'] as Map?)?['waiting'] as num?)?.toInt() ?? 0;
 
     return Scaffold(
@@ -159,19 +154,10 @@ class _LandingScreenState extends State<LandingScreen> {
                     spacing: 56,
                     runSpacing: 18,
                     children: [
-                      StatBlock('${metrics['journeys_started'] ?? 0}', 'RECOVERIES RUN'),
-                      StatBlock('${metrics['journeys_completed'] ?? 0}', 'COMPLETED'),
-                      StatBlock('${metrics['human_handoffs'] ?? 0}', 'HANDOFFS',
+                      StatBlock('${metrics['journeys_started'] ?? 0}', 'Calls made'),
+                      StatBlock('${metrics['journeys_completed'] ?? 0}', 'Completed'),
+                      StatBlock('${metrics['human_handoffs'] ?? 0}', 'Handed to a person',
                           color: AppTheme.accent),
-                      StatBlock(
-                        '${(((metrics['automation_rate'] ?? 0) as num) * 100).round()}%',
-                        'FIELDS AUTOMATED',
-                      ),
-                      StatBlock(
-                        groq['connected'] == true ? 'Groq' : 'Rules',
-                        'REASONING MODE',
-                        size: 22,
-                      ),
                     ],
                   ),
 
@@ -207,27 +193,39 @@ class _LandingScreenState extends State<LandingScreen> {
                   ),
 
                   const SizedBox(height: 46),
-                  const SectionLabel('01B', 'Real phone call'),
+                  const SectionLabel('01A', 'Work a lead sheet'),
                   const SizedBox(height: 16),
-                  Text('Dial a real number, live', style: AppTheme.heading(26)),
+                  Text('Upload a sheet, call down the list', style: AppTheme.heading(26)),
                   const SizedBox(height: 8),
                   SizedBox(
                     width: 520,
                     child: Text(
-                      'Everything above runs in browser simulation. This actually rings a '
-                      'phone through Twilio - enter a verified test number you control, using '
-                      'a synthetic lead\'s journey context for what it already knows.',
+                      'Upload a CSV or Excel sheet of leads, call each one straight from the '
+                      'list, watch the transcript live, and every outcome is saved back onto '
+                      'that row - still there after a refresh.',
+                      style: AppTheme.prose(13).copyWith(color: AppTheme.muted),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _cta('OPEN LEAD LIST', () => Navigator.of(context).pushNamed('/leads'),
+                      primary: true),
+
+                  const SizedBox(height: 46),
+                  const SectionLabel('01B', 'Real phone call'),
+                  const SizedBox(height: 16),
+                  Text('Call a real number', style: AppTheme.heading(26)),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: 520,
+                    child: Text(
+                      'Everything above is a simulation. This rings an actual phone - enter '
+                      'a number you own and have confirmed with your provider.',
                       style: AppTheme.prose(13).copyWith(color: AppTheme.muted),
                     ),
                   ),
                   const SizedBox(height: 16),
                   HandoutPanel(
-                    label: 'OUTBOUND CALL - TWILIO BRIDGE',
-                    trailing: MonoLabel(
-                      health['telephony_bridge'] != null ? 'BRIDGE CONFIGURED' : 'BRIDGE UNKNOWN',
-                      color: AppTheme.faint,
-                      size: 9,
-                    ),
+                    label: 'Call a number',
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -285,8 +283,8 @@ class _LandingScreenState extends State<LandingScreen> {
                         ],
                         const SizedBox(height: 10),
                         Text(
-                          'Trial Twilio accounts can only call numbers verified in the Twilio '
-                          'console. DNC is checked before the dial - a listed lead never rings.',
+                          'Only numbers you have already confirmed with your phone provider '
+                          'can be called.',
                           style: AppTheme.prose(11).copyWith(color: AppTheme.faint),
                         ),
                       ],
@@ -294,57 +292,7 @@ class _LandingScreenState extends State<LandingScreen> {
                   ),
 
                   const SizedBox(height: 46),
-                  const SectionLabel('02', 'How the call runs'),
-                  const SizedBox(height: 16),
-                  Text('Gate, disclose, resume, submit', style: AppTheme.heading(26)),
-                  const SizedBox(height: 22),
-                  const Wrap(
-                    spacing: 28,
-                    runSpacing: 22,
-                    children: [
-                      NumberedCard(
-                        number: '01',
-                        title: 'DNC gates the dial',
-                        body: 'The register is checked before the phone rings, not after.',
-                      ),
-                      NumberedCard(
-                        number: '02',
-                        title: 'Consent first',
-                        body: 'Recording is disclosed before a single field is collected.',
-                      ),
-                      NumberedCard(
-                        number: '03',
-                        title: 'Resume, do not restart',
-                        body: 'Only the missing Energy fields are asked for.',
-                      ),
-                      NumberedCard(
-                        number: '04',
-                        title: 'Submit and confirm',
-                        body: 'The payload is posted and the reference read back aloud.',
-                      ),
-                    ],
-                  ),
-
-                  if (queue['queue'] != null) ...[
-                    const SizedBox(height: 46),
-                    const SectionLabel('03', 'Who gets called first'),
-                    const SizedBox(height: 16),
-                    Text('The queue is ranked, not arbitrary', style: AppTheme.heading(26)),
-                    const SizedBox(height: 18),
-                    _callQueue(queue),
-                  ],
-
-                  if (vsManual.isNotEmpty) ...[
-                    const SizedBox(height: 46),
-                    const SectionLabel('04', 'Versus today'),
-                    const SizedBox(height: 16),
-                    Text('Measured against the manual workflow', style: AppTheme.heading(26)),
-                    const SizedBox(height: 18),
-                    _comparison(vsManual),
-                  ],
-
-                  const SizedBox(height: 46),
-                  const SectionLabel('05', 'Non-negotiable'),
+                  const SectionLabel('02', 'Non-negotiable'),
                   const SizedBox(height: 16),
                   Text('Guardrails, designed in', style: AppTheme.heading(26)),
                   const SizedBox(height: 18),
@@ -424,157 +372,4 @@ class _LandingScreenState extends State<LandingScreen> {
     );
   }
 
-  Widget _callQueue(Map<String, dynamic> q) {
-    final rows = ((q['queue'] as List?) ?? []).cast<Map<String, dynamic>>();
-    final blocked = ((q['blocked_by_dnc'] as List?) ?? []).cast<Map<String, dynamic>>();
-
-    return HandoutPanel(
-      label: 'CALL QUEUE · RANKED BY RECOVERY PROPENSITY',
-      trailing: MonoLabel('${q['scored_by']} ${q['model_version'] ?? ''}',
-          color: AppTheme.faint, size: 9),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ...rows.take(6).map((r) {
-            final band = '${r['band']}';
-            final colour = AppTheme.band(band);
-            final pct = (((r['recovery_probability'] as num?) ?? 0) * 100).round();
-            final reasons = ((r['reasons'] as List?) ?? []).cast<String>();
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 11),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    width: 30,
-                    child: Text('${r['queue_position']}'.padLeft(2, '0'),
-                        style: AppTheme.mono(11, color: AppTheme.numeral, tracking: 0.5)),
-                  ),
-                  SizedBox(
-                    width: 140,
-                    child: Text('${r['customer']}', style: AppTheme.prose(13).copyWith(color: AppTheme.text)),
-                  ),
-                  SizedBox(width: 62, child: Text('$pct%', style: AppTheme.figure(15, color: colour))),
-                  SizedBox(width: 78, child: MonoLabel(band, color: colour, size: 9)),
-                  Expanded(
-                    child: Text(
-                      reasons.isEmpty ? '' : reasons.first,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTheme.prose(12).copyWith(color: AppTheme.muted),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }),
-          if (blocked.isNotEmpty) ...[
-            const HandoutRule(top: 8, bottom: 12),
-            Row(
-              children: [
-                const MonoLabel('REMOVED BEFORE RANKING · DNC', color: AppTheme.accent, size: 9),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    blocked.map((b) => b['customer']).join(', '),
-                    style: AppTheme.prose(12).copyWith(color: AppTheme.muted),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _comparison(Map<String, dynamic> v) {
-    String secs(dynamic n) {
-      final d = (n as num?)?.toDouble() ?? 0;
-      if (d <= 0) return '-';
-      final m = d ~/ 60;
-      final rem = (d % 60).round();
-      return m > 0 ? '${m}m ${rem}s' : '${rem}s';
-    }
-
-    final reduction = (((v['handle_time_reduction'] as num?) ?? 0) * 100).round();
-    final measured = (v['calls_measured'] as num?)?.toInt() ?? 0;
-
-    return HandoutPanel(
-      label: 'EFFICIENCY GAIN',
-      trailing: MonoLabel(
-        measured == 0 ? 'NO COMPLETED CALLS YET' : '$measured CALL(S) MEASURED',
-        color: AppTheme.faint,
-        size: 9,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (measured == 0)
-            // Nothing has been measured yet, so show the manual baseline alone
-            // rather than a saving of zero, which would read as "no gain".
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Manual baseline today: ${secs(v['manual_handle_time_sec'])} per call, '
-                  '${v['manual_fields_typed'] ?? 0} fields typed by an agent, '
-                  '${v['manual_script_lookups'] ?? 0} script lookups.',
-                  style: AppTheme.prose(13),
-                ),
-                const SizedBox(height: 8),
-                Text('Run a recovery and the comparison fills in here.',
-                    style: AppTheme.prose(12).copyWith(color: AppTheme.muted)),
-              ],
-            )
-          else
-            Wrap(
-              spacing: 34,
-              runSpacing: 18,
-              children: [
-                _delta('HANDLE TIME', secs(v['manual_handle_time_sec']),
-                    secs(v['ai_handle_time_sec']), '$reduction% faster'),
-                _delta('FIELDS TYPED BY AN AGENT', '${v['manual_fields_typed'] ?? 0}',
-                    '${v['ai_fields_typed'] ?? 0}', 'captured by voice'),
-                _delta('SCRIPT LOOKUPS', '${v['manual_script_lookups'] ?? 0}',
-                    '${v['ai_script_lookups'] ?? 0}', 'scripts drive the call'),
-                _delta('JOURNEYS / AGENT HOUR', '${v['manual_journeys_per_agent_hour'] ?? 0}',
-                    '${v['ai_journeys_per_agent_hour'] ?? 0}', '${v['throughput_multiple'] ?? 0}x'),
-              ],
-            ),
-          const SizedBox(height: 16),
-          Text('${v['note'] ?? ''}',
-              style: AppTheme.prose(11).copyWith(color: AppTheme.faint, height: 1.5)),
-        ],
-      ),
-    );
-  }
-
-  Widget _delta(String label, String manual, String ai, String caption) {
-    return SizedBox(
-      width: 200,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          MonoLabel(label, size: 9),
-          const SizedBox(height: 8),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(manual,
-                  style: AppTheme.prose(14).copyWith(
-                      color: AppTheme.faint, decoration: TextDecoration.lineThrough)),
-              const SizedBox(width: 8),
-              const Icon(Icons.arrow_forward, size: 12, color: AppTheme.faint),
-              const SizedBox(width: 8),
-              Text(ai, style: AppTheme.figure(19, color: AppTheme.accent)),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(caption, style: AppTheme.prose(11).copyWith(color: AppTheme.muted)),
-        ],
-      ),
-    );
-  }
 }

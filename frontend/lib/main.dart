@@ -3,6 +3,7 @@ import 'theme/app_theme.dart';
 import 'screens/landing_screen.dart';
 import 'screens/console_screen.dart';
 import 'screens/inbox_screen.dart';
+import 'screens/leads_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,12 +18,13 @@ class RecoveryAiApp extends StatelessWidget {
     return MaterialApp(
       title: 'Recovery AI',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.dark(),
+      theme: AppTheme.light(),
       initialRoute: '/',
       routes: {
         '/': (_) => const LandingScreen(),
         '/console': (_) => const ConsoleScreen(),
         '/inbox': (_) => const InboxScreen(),
+        '/leads': (_) => const LeadsScreen(),
       },
     );
   }

@@ -8,7 +8,7 @@ import 'app_theme.dart';
 /// footer. Screens compose these instead of hand-rolling decoration, which is
 /// what keeps every surface on-brief.
 
-/// `0 1 · T H E D O M A I N`
+/// A quiet numbered label above a heading, e.g. "01 - The domain".
 class SectionLabel extends StatelessWidget {
   const SectionLabel(this.number, this.title, {super.key, this.color = AppTheme.accent});
 
@@ -18,18 +18,16 @@ class SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final spacedNumber = number.split('').join(' ');
-    final spacedTitle = title.toUpperCase().split('').join(' ');
     return Text(
-      '$spacedNumber  ·  $spacedTitle',
-      style: AppTheme.mono(10.5, color: color, tracking: 1.4, weight: FontWeight.w700),
+      '$number  ·  $title',
+      style: AppTheme.mono(11, color: color, tracking: 0.4, weight: FontWeight.w700),
     );
   }
 }
 
-/// Uppercase mono label used above panels and table headers.
+/// A small, quiet label used above panels and table headers.
 class MonoLabel extends StatelessWidget {
-  const MonoLabel(this.text, {super.key, this.color = AppTheme.label, this.size = 10});
+  const MonoLabel(this.text, {super.key, this.color = AppTheme.label, this.size = 11});
 
   final String text;
   final Color color;
@@ -37,7 +35,7 @@ class MonoLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) =>
-      Text(text.toUpperCase(), style: AppTheme.mono(size, color: color, tracking: 1.8));
+      Text(text, style: AppTheme.mono(size, color: color, tracking: 0.2, weight: FontWeight.w600));
 }
 
 /// Big heading where one trailing word carries the accent, as with "listen."
@@ -197,9 +195,9 @@ class HandoutBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        text.toUpperCase(),
-        style: AppTheme.mono(9, color: primary ? AppTheme.bg : AppTheme.text,
-            tracking: 1.2, weight: FontWeight.w700),
+        text,
+        style: AppTheme.mono(11, color: primary ? AppTheme.ink : AppTheme.text,
+            tracking: 0.2, weight: FontWeight.w700),
       ),
     );
   }

@@ -32,6 +32,15 @@ from app.services.handoff_queue import HandoffQueue
 from app.services.store import Store
 from app.telephony.adapters import TelephonyAdapter, get_adapter
 
+# Internal _finalise() status strings, mapped to the CRM-facing lead status
+# shown in the uploaded-leads list once a call ends.
+_CRM_STATUS = {
+    "completed": "COMPLETED",
+    "declined": "DECLINED",
+    "handoff": "HANDOFF",
+    "dnc_blocked": "BLOCKED_DNC",
+}
+
 
 class ConversationManager:
     def __init__(
@@ -49,7 +58,7 @@ class ConversationManager:
         self.metrics = metrics
         self.hallucination_guard = hallucination_guard
         self.groq = groq or GroqProvider()
-        self.journey = JourneyEngine()
+        self.journey = JourneyEngine(leads_store=store)
         self.submission = JourneySubmissionService(self.journey)
         self.scripts = ScriptEngine()
         self.guardrails = GuardrailEngine()
@@ -292,6 +301,7 @@ class ConversationManager:
             msg = self.scripts.render("consent_denied")
             self._assistant(msg)
             self.sm.transition(CallState.ENDED, "after_decline")
+            self._finalise("declined")
             return self._result(
                 msg,
                 ended=True,
@@ -822,6 +832,22 @@ class ConversationManager:
                         self.payload.model_dump(),
                         self.receipt.model_dump(),
                     )
+                if self.lead:
+                    outcome = None
+                    if self.receipt:
+                        outcome = (
+                            f"Submitted - ref {self.receipt.reference}"
+                            if self.receipt.accepted
+                            else f"Submission refused - {self.receipt.error}"
+                        )
+                    elif self.handoff_ticket_id:
+                        outcome = f"Handed off - ticket {self.handoff_ticket_id}"
+                    self.store.update_lead_status(
+                        self.lead.lead_id,
+                        _CRM_STATUS.get(status, status.upper()),
+                        call_id=self.call_id,
+                        outcome=outcome,
+                    )
             except Exception:
                 pass
 
@@ -940,6 +966,7 @@ class ConversationManager:
             "transcript": self.transcript,
             "why": [w.model_dump() for w in self.why_log],
             "radar": self.radar(),
+            "journey_progress": self.journey.progress(self.fields),
             "recovery": self.recovery_context() if self.lead else None,
             "handoff_brief": self.handoff_brief.model_dump() if self.handoff_brief else None,
             "handoff_ticket_id": self.handoff_ticket_id,
