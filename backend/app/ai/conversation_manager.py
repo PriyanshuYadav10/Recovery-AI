@@ -88,7 +88,9 @@ class ConversationManager:
         self.demo_scenario: Optional[str] = None
         self.handoff_phase: Optional[str] = None
 
-    async def start(self, lead_id: str, voice_mode: str = "BROWSER") -> TurnResult:
+    async def start(
+        self, lead_id: str, voice_mode: str = "BROWSER", phone_override: str | None = None
+    ) -> TurnResult:
         self.voice_mode = voice_mode
         self.telephony = get_adapter(voice_mode)
         lead = self.journey.get_lead(lead_id)
@@ -121,8 +123,13 @@ class ConversationManager:
                 ),
             )
 
+        # phone_override lets a demo dial a real, presenter-controlled number
+        # while every other field (known_fields, last_completed_step, script
+        # personalisation) still comes from the lead record - the synthetic
+        # leads' own "phone" numbers are fabricated and can never ring anything.
+        to_number = phone_override or lead.phone
         self.dial_result = await self.telephony.start_call(
-            lead.phone, {"lead_id": lead_id, "call_id": self.call_id}
+            to_number, {"lead_id": lead_id, "call_id": self.call_id}
         )
         self.audit.emit("DIALLED", self.call_id, dial=self.dial_result)
 

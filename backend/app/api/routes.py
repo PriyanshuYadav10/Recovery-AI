@@ -70,6 +70,7 @@ class UtteranceRequest(BaseModel):
 class DialRequest(BaseModel):
     lead_id: str
     voice_mode: str = "TWILIO"
+    phone: Optional[str] = None  # dial this real number instead of the lead's synthetic one
 
 
 class ClaimRequest(BaseModel):
@@ -261,7 +262,7 @@ async def dial_call(body: DialRequest):
         }
 
     mgr = new_manager(body.voice_mode)
-    result = await mgr.start(body.lead_id, voice_mode=body.voice_mode)
+    result = await mgr.start(body.lead_id, voice_mode=body.voice_mode, phone_override=body.phone)
     sessions[mgr.call_id] = mgr
     return {
         "dialled": True,

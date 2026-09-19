@@ -28,8 +28,10 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
   bool busy = false;
   bool live = false;
   bool showDemoControls = false;
+  bool watchingRealCall = false;
   String? banner;
   StreamSubscription? _voiceSub;
+  Timer? _pollTimer;
 
   @override
   void initState() {
@@ -43,10 +45,67 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
   Future<void> _bootstrap() async {
     final args = ModalRoute.of(context)?.settings.arguments as Map?;
     if (args == null) return;
+    final watchId = args['callId'] as String?;
+    if (watchId != null && args['watch'] == true) {
+      await _watchRealCall(watchId);
+      return;
+    }
     final scenario = args['scenario'] as String?;
     final leadId = args['leadId'] as String? ?? 'EN-1001';
     if (args['autoStart'] == true) {
       await _start(leadId: leadId, scenario: scenario);
+    }
+  }
+
+  /// Attaches to a call already ringing on a real phone (dialled from the
+  /// landing page's REAL PHONE CALL panel) instead of starting a new one.
+  /// The customer's speech reaches the brain through the Twilio bridge, not
+  /// through this screen - so this only ever polls and displays, it never
+  /// sends utterances itself.
+  Future<void> _watchRealCall(String id) async {
+    setState(() {
+      callId = id;
+      watchingRealCall = true;
+      live = true;
+      busy = true;
+      banner = null;
+    });
+    await _pollRealCall();
+    setState(() => busy = false);
+    _pollTimer = Timer.periodic(const Duration(seconds: 2), (_) => _pollRealCall());
+  }
+
+  Future<void> _pollRealCall() async {
+    if (callId == null || !mounted) return;
+    try {
+      final snap = await api.getCall(callId!);
+      if (!mounted) return;
+      setState(() {
+        snapshot = snap;
+        turn = {
+          'state': snap['state'],
+          'radar': snap['radar'],
+          'journey_progress': snap['recovery'],
+          'escalated': snap['state'] == 'HANDOFF',
+          'handoff_brief': snap['handoff_brief'],
+          'ended': snap['state'] == 'ENDED',
+          'receipt': snap['receipt'],
+          'handoff_ticket_id': snap['handoff_ticket_id'],
+        };
+        _ingestTranscript(snap);
+        banner = null;
+      });
+      if (snap['state'] == 'ENDED' || snap['state'] == 'HANDOFF') {
+        _pollTimer?.cancel();
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (scrollCtrl.hasClients) {
+          scrollCtrl.animateTo(scrollCtrl.position.maxScrollExtent,
+              duration: const Duration(milliseconds: 250), curve: Curves.easeOut);
+        }
+      });
+    } catch (e) {
+      if (mounted) setState(() => banner = 'Lost contact with the call  -  $e');
     }
   }
 
@@ -132,6 +191,7 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
 
   @override
   void dispose() {
+    _pollTimer?.cancel();
     _voiceSub?.cancel();
     voice.dispose();
     inputCtrl.dispose();
@@ -220,7 +280,10 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
           const SizedBox(width: 18),
           _pill(live ? 'LIVE' : 'IDLE', live ? AppTheme.accent : AppTheme.panelAlt),
           const SizedBox(width: 8),
-          _pill('VOICE · BROWSER', AppTheme.panelAlt),
+          if (watchingRealCall)
+            _pill('☎ REAL PHONE CALL', AppTheme.accent)
+          else
+            _pill('VOICE · BROWSER', AppTheme.panelAlt),
           const SizedBox(width: 8),
           _pill(state, AppTheme.panelAlt),
           const Spacer(),
@@ -615,6 +678,39 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
   }
 
   Widget _composer() {
+    // On a real phone call, the customer's speech reaches the brain through
+    // Twilio, not through this screen - there is nothing to type or speak
+    // into here, so the composer becomes a live status line instead of an
+    // input box that would silently do nothing.
+    if (watchingRealCall) {
+      final ended = turn['ended'] == true;
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: AppTheme.panel,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: ended ? AppTheme.lineSoft : AppTheme.accent),
+          ),
+          child: Row(
+            children: [
+              if (!ended) ...[
+                const SizedBox(
+                  width: 12, height: 12,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.accent),
+                ),
+                const SizedBox(width: 12),
+                Text('Listening on the real phone call - the customer is speaking directly to Twilio',
+                    style: AppTheme.prose(12.5).copyWith(color: AppTheme.text)),
+              ] else
+                Text('Call ended.', style: AppTheme.prose(12.5).copyWith(color: AppTheme.muted)),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
       child: Row(

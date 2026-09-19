@@ -19,6 +19,11 @@ class _LandingScreenState extends State<LandingScreen> {
   Map<String, dynamic> queue = {};
   String? error;
 
+  final phoneCtrl = TextEditingController();
+  String dialLeadId = 'EN-1001';
+  bool dialing = false;
+  String? dialStatus;
+
   @override
   void initState() {
     super.initState();
@@ -42,12 +47,60 @@ class _LandingScreenState extends State<LandingScreen> {
     }
   }
 
+  Future<void> _dialReal() async {
+    final phone = phoneCtrl.text.trim();
+    if (phone.isEmpty) {
+      setState(() => dialStatus = 'Enter a real, verified number first.');
+      return;
+    }
+    setState(() {
+      dialing = true;
+      dialStatus = 'Dialling $phone ...';
+    });
+    try {
+      final res = await api.dialReal(leadId: dialLeadId, phone: phone);
+      if (res['dialled'] == false) {
+        setState(() => dialStatus =
+            'Blocked before dialling: ${res['blocked_by']} - ${res['detail']?['reason'] ?? 'not eligible'}');
+        return;
+      }
+      final dialResult = (res['dial_result'] as Map?) ?? {};
+      final status = dialResult['status'];
+      if (status == 'bridge_unavailable' || status == 'dial_failed') {
+        setState(() => dialStatus =
+            'Twilio bridge did not accept the call: ${dialResult['error'] ?? status}. '
+            'Is telephony/bridge running (npm start) and .env filled in?');
+        return;
+      }
+      final callId = res['call_id'] as String?;
+      if (callId == null) {
+        setState(() => dialStatus = 'No call_id returned - unexpected response.');
+        return;
+      }
+      setState(() => dialStatus = 'Ringing. Opening the live console...');
+      if (!mounted) return;
+      await Navigator.of(context)
+          .pushNamed('/console', arguments: {'callId': callId, 'watch': true});
+      if (mounted) setState(() => dialStatus = null);
+    } catch (e) {
+      setState(() => dialStatus = 'Dial failed: $e');
+    } finally {
+      if (mounted) setState(() => dialing = false);
+    }
+  }
+
   void _goConsole({String? scenario, String? leadId}) {
     Navigator.of(context).pushNamed('/console', arguments: {
       if (scenario != null) 'scenario': scenario,
       if (leadId != null) 'leadId': leadId,
       'autoStart': true,
     }).then((_) => _load());
+  }
+
+  @override
+  void dispose() {
+    phoneCtrl.dispose();
+    super.dispose();
   }
 
   @override
@@ -139,6 +192,93 @@ class _LandingScreenState extends State<LandingScreen> {
                         accent: waiting > 0,
                       ),
                     ],
+                  ),
+
+                  const SizedBox(height: 46),
+                  const SectionLabel('01B', 'Real phone call'),
+                  const SizedBox(height: 16),
+                  Text('Dial a real number, live', style: AppTheme.heading(26)),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: 520,
+                    child: Text(
+                      'Everything above runs in browser simulation. This actually rings a '
+                      'phone through Twilio - enter a verified test number you control, using '
+                      'a synthetic lead\'s journey context for what it already knows.',
+                      style: AppTheme.prose(13).copyWith(color: AppTheme.muted),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  HandoutPanel(
+                    label: 'OUTBOUND CALL - TWILIO BRIDGE',
+                    trailing: MonoLabel(
+                      health['telephony_bridge'] != null ? 'BRIDGE CONFIGURED' : 'BRIDGE UNKNOWN',
+                      color: AppTheme.faint,
+                      size: 9,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: 240,
+                              child: TextField(
+                                controller: phoneCtrl,
+                                enabled: !dialing,
+                                style: AppTheme.prose(13),
+                                decoration: const InputDecoration(
+                                  hintText: '+91XXXXXXXXXX (verified number)',
+                                  isDense: true,
+                                ),
+                              ),
+                            ),
+                            SizedBox(
+                              width: 160,
+                              child: DropdownButtonFormField<String>(
+                                initialValue: dialLeadId,
+                                isDense: true,
+                                decoration: const InputDecoration(isDense: true),
+                                dropdownColor: AppTheme.panel,
+                                style: AppTheme.prose(13).copyWith(color: AppTheme.text),
+                                items: const [
+                                  DropdownMenuItem(value: 'EN-1001', child: Text('EN-1001')),
+                                  DropdownMenuItem(value: 'EN-1002', child: Text('EN-1002')),
+                                  DropdownMenuItem(value: 'EN-1003', child: Text('EN-1003')),
+                                ],
+                                onChanged: dialing
+                                    ? null
+                                    : (v) => setState(() => dialLeadId = v ?? dialLeadId),
+                              ),
+                            ),
+                            FilledButton.icon(
+                              onPressed: dialing ? null : _dialReal,
+                              icon: dialing
+                                  ? const SizedBox(
+                                      width: 14, height: 14,
+                                      child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.bg),
+                                    )
+                                  : const Icon(Icons.call, size: 16),
+                              label: Text(dialing ? 'DIALLING' : 'CALL'),
+                            ),
+                          ],
+                        ),
+                        if (dialStatus != null) ...[
+                          const SizedBox(height: 10),
+                          Text(dialStatus!,
+                              style: AppTheme.prose(12.5).copyWith(color: AppTheme.accent)),
+                        ],
+                        const SizedBox(height: 10),
+                        Text(
+                          'Trial Twilio accounts can only call numbers verified in the Twilio '
+                          'console. DNC is checked before the dial - a listed lead never rings.',
+                          style: AppTheme.prose(11).copyWith(color: AppTheme.faint),
+                        ),
+                      ],
+                    ),
                   ),
 
                   const SizedBox(height: 46),

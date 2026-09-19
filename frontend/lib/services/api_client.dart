@@ -63,11 +63,36 @@ class ApiClient {
     return jsonDecode(r.body) as Map<String, dynamic>;
   }
 
+  /// Places a REAL outbound phone call via the Twilio bridge. [phone] is
+  /// the actual number to ring; the lead's own (synthetic) contact details
+  /// are still used for journey context, just not for dialling.
+  Future<Map<String, dynamic>> dialReal({
+    required String leadId,
+    required String phone,
+  }) async {
+    final r = await http.post(
+      _u('/api/calls/dial'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'lead_id': leadId, 'voice_mode': 'TWILIO', 'phone': phone}),
+    );
+    if (r.statusCode >= 400) throw Exception(r.body);
+    return jsonDecode(r.body) as Map<String, dynamic>;
+  }
+
   Future<Map<String, dynamic>> runDemo(String scenario) async {
     final r = await http.post(_u('/api/demos/$scenario/run'));
     if (r.statusCode >= 400) {
       throw Exception(r.body);
     }
+    return jsonDecode(r.body) as Map<String, dynamic>;
+  }
+
+  /// The live snapshot for a call already in progress (e.g. a real phone
+  /// call, driven by the Twilio bridge rather than this app). Used to watch
+  /// a call happen without having started it from this screen.
+  Future<Map<String, dynamic>> getCall(String callId) async {
+    final r = await http.get(_u('/api/calls/$callId'));
+    if (r.statusCode >= 400) throw Exception(r.body);
     return jsonDecode(r.body) as Map<String, dynamic>;
   }
 
