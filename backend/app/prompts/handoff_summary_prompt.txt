@@ -1,2 +1,0 @@
-Create a warm handoff brief so the human agent need not ask the customer to repeat details.
-Return JSON: {"conversation_summary":"...","recommended_opening":"...","next_action":"..."}

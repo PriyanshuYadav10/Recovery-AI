@@ -12,6 +12,7 @@ from app.ai.intent_engine import IntentEngine
 from app.ai.script_engine import ScriptEngine
 from app.audit.logger import AuditLog
 from app.audit.recorder import CallRecorder
+from app.compliance.ledger import build_ledger
 from app.core.state_machine import StateMachine
 from app.journey.engine import JourneyEngine, JourneySubmissionService
 from app.journey.submitter import JourneySubmitClient
@@ -99,6 +100,7 @@ class ConversationManager:
         self.voice_mode = voice_mode
         self.demo_scenario: Optional[str] = None
         self.handoff_phase: Optional[str] = None
+        self.ledger: list[dict[str, Any]] = []
 
     async def start(
         self, lead_id: str, voice_mode: str = "BROWSER", phone_override: str | None = None
@@ -956,6 +958,12 @@ class ConversationManager:
             audit_tail=self.audit.tail(30),
         )
 
+    def compliance_ledger(self) -> list[dict[str, Any]]:
+        """Hash-chains this call's own audit trail on demand, so it always
+        reflects every event recorded so far - mid-call or after it ends."""
+        self.ledger = build_ledger(self.call_id, self.audit.events)
+        return self.ledger
+
     def snapshot(self) -> dict[str, Any]:
         return {
             "call_id": self.call_id,
@@ -978,4 +986,5 @@ class ConversationManager:
             "voice_mode": self.voice_mode,
             "groq": self.groq.status(),
             "audit": [e.model_dump() for e in self.audit.tail(100)],
+            "ledger": self.compliance_ledger(),
         }

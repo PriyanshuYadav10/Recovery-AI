@@ -177,6 +177,24 @@ class ApiClient {
     return jsonDecode(r.body) as Map<String, dynamic>;
   }
 
+  /// The hash-chained compliance ledger for one call: every consent,
+  /// guardrail and field-capture decision, plus a from-scratch verification
+  /// that none of it has been edited since it was written.
+  Future<Map<String, dynamic>> callLedger(String callId) async {
+    final r = await http.get(_u('/api/calls/$callId/ledger'));
+    if (r.statusCode >= 400) throw Exception(r.body);
+    return jsonDecode(r.body) as Map<String, dynamic>;
+  }
+
+  /// Mutates a COPY of the real ledger server-side and returns it, so the
+  /// tamper-evidence claim can be shown breaking live instead of just
+  /// asserted. Never touches the stored record.
+  Future<Map<String, dynamic>> tamperLedgerDemo(String callId) async {
+    final r = await http.post(_u('/api/calls/$callId/ledger/tamper-demo'));
+    if (r.statusCode >= 400) throw Exception(r.body);
+    return jsonDecode(r.body) as Map<String, dynamic>;
+  }
+
   Future<Map<String, dynamic>> modelStatus() async {
     final r = await http.get(_u('/api/model/status'));
     return jsonDecode(r.body) as Map<String, dynamic>;

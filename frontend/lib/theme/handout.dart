@@ -135,6 +135,10 @@ class HandoutPanel extends StatelessWidget {
 }
 
 /// `12 / HOURS` - large figure over a small mono caption.
+///
+/// When [value] is a plain integer, it counts up from zero on first build
+/// instead of just appearing - a small nudge that these are live numbers,
+/// not printed copy.
 class StatBlock extends StatelessWidget {
   const StatBlock(this.value, this.label, {super.key, this.color = AppTheme.ink, this.size = 30});
 
@@ -145,14 +149,107 @@ class StatBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final target = int.tryParse(value);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(value, style: AppTheme.figure(size, color: color)),
+        if (target == null)
+          Text(value, style: AppTheme.figure(size, color: color))
+        else
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: target.toDouble()),
+            duration: const Duration(milliseconds: 900),
+            curve: Curves.easeOutCubic,
+            builder: (context, v, _) =>
+                Text('${v.round()}', style: AppTheme.figure(size, color: color)),
+          ),
         const SizedBox(height: 6),
         MonoLabel(label, size: 9.5),
       ],
+    );
+  }
+}
+
+/// Fades and lifts a child into place once, on first build - used once per
+/// screen for the hero block so the page feels like it opens rather than
+/// just appears.
+class FadeSlideIn extends StatefulWidget {
+  const FadeSlideIn({super.key, required this.child, this.delay = Duration.zero});
+
+  final Widget child;
+  final Duration delay;
+
+  @override
+  State<FadeSlideIn> createState() => _FadeSlideInState();
+}
+
+class _FadeSlideInState extends State<FadeSlideIn> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 520));
+    Future.delayed(widget.delay, () {
+      if (mounted) _controller.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final curved = CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic);
+    return AnimatedBuilder(
+      animation: curved,
+      builder: (context, child) => Opacity(
+        opacity: curved.value,
+        child: Transform.translate(offset: Offset(0, (1 - curved.value) * 14), child: child),
+      ),
+      child: widget.child,
+    );
+  }
+}
+
+/// Lifts a child a couple of pixels and adds a soft shadow under the pointer
+/// - the one hover cue this web app uses, applied to every button and card.
+class HoverLift extends StatefulWidget {
+  const HoverLift({super.key, required this.child, this.lift = 3, this.borderRadius = 10});
+
+  final Widget child;
+  final double lift;
+  final double borderRadius;
+
+  @override
+  State<HoverLift> createState() => _HoverLiftState();
+}
+
+class _HoverLiftState extends State<HoverLift> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      cursor: SystemMouseCursors.click,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 140),
+        curve: Curves.easeOut,
+        transform: Matrix4.translationValues(0, _hover ? -widget.lift : 0, 0),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(widget.borderRadius),
+          boxShadow: _hover
+              ? [BoxShadow(color: AppTheme.ink.withValues(alpha: 0.10), blurRadius: 16, offset: const Offset(0, 8))]
+              : const [],
+        ),
+        child: widget.child,
+      ),
     );
   }
 }
@@ -293,13 +390,10 @@ class Masthead extends StatelessWidget {
         const SizedBox(width: 6),
         Text('/ econnex', style: AppTheme.prose(14).copyWith(color: AppTheme.muted)),
         const Spacer(),
-        Container(
+        if (online) const _PulseDot() else Container(
           width: 7,
           height: 7,
-          decoration: BoxDecoration(
-            color: online ? AppTheme.accent : AppTheme.faint,
-            shape: BoxShape.circle,
-          ),
+          decoration: const BoxDecoration(color: AppTheme.faint, shape: BoxShape.circle),
         ),
         const SizedBox(width: 10),
         MonoLabel(rightLabel, color: AppTheme.label, size: 9.5),
@@ -308,8 +402,72 @@ class Masthead extends StatelessWidget {
   }
 }
 
-/// Waveform strip from the cover - bars driven by whatever value is passed.
-class Waveform extends StatelessWidget {
+/// A small dot with a soft halo that expands and fades - "this is live."
+class _PulseDot extends StatefulWidget {
+  const _PulseDot();
+
+  @override
+  State<_PulseDot> createState() => _PulseDotState();
+}
+
+class _PulseDotState extends State<_PulseDot> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 2))
+      ..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        final t = _controller.value;
+        return SizedBox(
+          width: 16,
+          height: 16,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 7 + t * 9,
+                height: 7 + t * 9,
+                decoration: BoxDecoration(
+                  color: AppTheme.accent.withValues(alpha: (1 - t) * 0.35),
+                  shape: BoxShape.circle,
+                ),
+              ),
+              Container(
+                width: 7,
+                height: 7,
+                decoration: const BoxDecoration(color: AppTheme.accent, shape: BoxShape.circle),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// A waveform that actually listens, instead of a printed graphic of one.
+///
+/// Each bar breathes on its own phase and speed, seeded from [levels] so real
+/// activity (more calls, more handoffs) still shapes the pattern - it just
+/// never sits still, the way audio never does. This is the one animated
+/// flourish on the page, used exactly once, because the brief is "teach the
+/// phone to listen": a static bar chart about listening undercuts its own
+/// point.
+class Waveform extends StatefulWidget {
   const Waveform({super.key, required this.levels, this.height = 54, this.barWidth = 9});
 
   final List<double> levels;
@@ -317,23 +475,72 @@ class Waveform extends StatelessWidget {
   final double barWidth;
 
   @override
+  State<Waveform> createState() => _WaveformState();
+}
+
+class _WaveformState extends State<Waveform> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final List<double> _phase;
+  late final List<double> _speed;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 60))
+      ..repeat();
+    // Deterministic per-bar phase/speed from each level, so a rebuild (a
+    // metrics refresh) doesn't reset every bar to the same starting beat.
+    _phase = [for (final l in widget.levels) (l * 137) % (2 * 3.14159)];
+    _speed = [for (final l in widget.levels) 0.6 + (l * 53) % 1.0];
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: height,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          for (final level in levels)
-            Padding(
-              padding: const EdgeInsets.only(right: 3),
-              child: Container(
-                width: barWidth,
-                height: (height * level.clamp(0.12, 1.0)),
-                color: AppTheme.accent,
-              ),
-            ),
-        ],
+      height: widget.height,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          final t = _controller.value * 2 * 3.14159 * 20; // slow, continuous
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              for (var i = 0; i < widget.levels.length; i++)
+                Padding(
+                  padding: const EdgeInsets.only(right: 3),
+                  child: Container(
+                    width: widget.barWidth,
+                    height: widget.height *
+                        _breathe(widget.levels[i], _phase[i], _speed[i], t).clamp(0.10, 1.0),
+                    decoration: BoxDecoration(
+                      color: AppTheme.accent,
+                      borderRadius: BorderRadius.circular(widget.barWidth / 2),
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
       ),
     );
+  }
+
+  double _breathe(double base, double phase, double speed, double t) {
+    final wobble = 0.22 * (0.5 + 0.5 * _sin(t * speed + phase));
+    return base + wobble - 0.11;
+  }
+
+  // A tiny sine approximation so this file needs no extra import for dart:math.
+  double _sin(double x) {
+    x = x % (2 * 3.14159);
+    if (x < 0) x += 2 * 3.14159;
+    final term = x < 3.14159 ? x : x - 2 * 3.14159;
+    return term - (term * term * term) / 6 + (term * term * term * term * term) / 120;
   }
 }

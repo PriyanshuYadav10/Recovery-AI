@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import io
 import uuid
 from typing import Any, Optional
@@ -12,6 +13,7 @@ from pydantic import BaseModel, Field
 from app.ai.conversation_manager import ConversationManager
 from app.ai.groq_provider import GroqProvider
 from app.audit.recorder import CallRecorder
+from app.compliance.ledger import build_ledger, verify_ledger
 from app.core.config import BRIDGE_BASE_URL, DATA_DIR, HUMAN_QUEUE_NUMBER, JOURNEY_SUBMIT_URL
 from app.journey.engine import JourneyEngine
 from app.journey.submitter import JourneySubmitClient
@@ -487,6 +489,50 @@ async def replay(call_id: str):
         "payload": mgr.payload.model_dump() if mgr.payload else None,
         "receipt": mgr.receipt.model_dump() if mgr.receipt else None,
         "recording_path": mgr.recording_path,
+    }
+
+
+def _ledger_for(call_id: str) -> tuple[list[dict[str, Any]], str]:
+    """The hash-chained events for a call, live or persisted, plus the
+    call_id its genesis block was seeded from (always the requested id)."""
+    mgr = sessions.get(call_id)
+    if mgr:
+        return build_ledger(mgr.call_id, mgr.audit.events), mgr.call_id
+    stored = store.get_call(call_id)
+    if not stored:
+        raise HTTPException(404, "Unknown call_id")
+    return stored.get("ledger", []), call_id
+
+
+@app.get("/api/calls/{call_id}/ledger")
+async def get_ledger(call_id: str):
+    """The compliance ledger for one call: every guardrail, consent and
+    field-capture decision, hash-chained, plus a from-scratch verification
+    that nothing in it has been altered since it was written."""
+    ledger, chain_id = _ledger_for(call_id)
+    return {"call_id": call_id, "ledger": ledger, "verification": verify_ledger(chain_id, ledger)}
+
+
+@app.post("/api/calls/{call_id}/ledger/tamper-demo")
+async def tamper_ledger_demo(call_id: str):
+    """Mutates a copy of the real ledger - never the stored one - so the
+    tamper-evidence claim can be demonstrated live instead of just stated.
+    Returns the same chain with one record's details edited after the fact,
+    and the verification result showing exactly where it broke."""
+    ledger, chain_id = _ledger_for(call_id)
+    if not ledger:
+        raise HTTPException(400, "This call has no ledger records yet")
+    tampered = copy.deepcopy(ledger)
+    target = len(tampered) // 2
+    record = tampered[target]
+    details = dict(record.get("details") or {})
+    details["_edited_after_the_fact"] = True
+    record["details"] = details
+    return {
+        "call_id": call_id,
+        "ledger": tampered,
+        "tampered_index": target,
+        "verification": verify_ledger(chain_id, tampered),
     }
 
 
