@@ -18,11 +18,6 @@ class _LandingScreenState extends State<LandingScreen> {
   Map<String, dynamic> health = {};
   String? error;
 
-  final phoneCtrl = TextEditingController();
-  String dialLeadId = 'EN-1001';
-  bool dialing = false;
-  String? dialStatus;
-
   @override
   void initState() {
     super.initState();
@@ -44,60 +39,6 @@ class _LandingScreenState extends State<LandingScreen> {
     }
   }
 
-  Future<void> _dialReal() async {
-    final phone = phoneCtrl.text.trim();
-    if (phone.isEmpty) {
-      setState(() => dialStatus = 'Enter a real, verified number first.');
-      return;
-    }
-    // A bare number with no country code gets silently reinterpreted by
-    // Twilio using the account's default region - that's exactly how
-    // "7357730549" (India, +91) was dialled as +1 7357730549 (US) without
-    // any error until it hit the verified-numbers check. Refusing to send
-    // an ambiguous number is safer than trusting Twilio to guess right.
-    final digitsOnly = phone.replaceAll(RegExp(r'[^\d+]'), '');
-    if (!digitsOnly.startsWith('+') || digitsOnly.length < 8) {
-      setState(() => dialStatus =
-          "Include the country code, e.g. +91$phone - a bare number can be "
-          "silently misread as the wrong country.");
-      return;
-    }
-    setState(() {
-      dialing = true;
-      dialStatus = 'Dialling $phone ...';
-    });
-    try {
-      final res = await api.dialReal(leadId: dialLeadId, phone: phone);
-      if (res['dialled'] == false) {
-        setState(() => dialStatus =
-            'Blocked before dialling: ${res['blocked_by']} - ${res['detail']?['reason'] ?? 'not eligible'}');
-        return;
-      }
-      final dialResult = (res['dial_result'] as Map?) ?? {};
-      final status = dialResult['status'];
-      if (status == 'bridge_unavailable' || status == 'dial_failed') {
-        setState(() => dialStatus =
-            'Twilio bridge did not accept the call: ${dialResult['error'] ?? status}. '
-            'Is telephony/bridge running (npm start) and .env filled in?');
-        return;
-      }
-      final callId = res['call_id'] as String?;
-      if (callId == null) {
-        setState(() => dialStatus = 'No call_id returned - unexpected response.');
-        return;
-      }
-      setState(() => dialStatus = 'Ringing. Opening the live console...');
-      if (!mounted) return;
-      await Navigator.of(context)
-          .pushNamed('/console', arguments: {'callId': callId, 'watch': true});
-      if (mounted) setState(() => dialStatus = null);
-    } catch (e) {
-      setState(() => dialStatus = 'Dial failed: $e');
-    } finally {
-      if (mounted) setState(() => dialing = false);
-    }
-  }
-
   void _goConsole({String? scenario, String? leadId}) {
     Navigator.of(context).pushNamed('/console', arguments: {
       if (scenario != null) 'scenario': scenario,
@@ -107,10 +48,7 @@ class _LandingScreenState extends State<LandingScreen> {
   }
 
   @override
-  void dispose() {
-    phoneCtrl.dispose();
-    super.dispose();
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -201,96 +139,16 @@ class _LandingScreenState extends State<LandingScreen> {
                   SizedBox(
                     width: 520,
                     child: Text(
-                      'Upload a CSV or Excel sheet of leads, call each one straight from the '
-                      'list, watch the transcript live, and every outcome is saved back onto '
-                      'that row - still there after a refresh.',
+                      'This is the one place to make a real call. Upload a CSV or Excel '
+                      'sheet of leads, call any one of them straight from the list with a '
+                      'number you have confirmed with your provider, watch the transcript '
+                      'live, and every outcome is saved back onto that row.',
                       style: AppTheme.prose(13).copyWith(color: AppTheme.muted),
                     ),
                   ),
                   const SizedBox(height: 16),
                   _cta('OPEN LEAD LIST', () => Navigator.of(context).pushNamed('/leads'),
                       primary: true),
-
-                  const SizedBox(height: 46),
-                  const SectionLabel('01B', 'Real phone call'),
-                  const SizedBox(height: 16),
-                  Text('Call a real number', style: AppTheme.heading(26)),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: 520,
-                    child: Text(
-                      'Everything above is a simulation. This rings an actual phone - enter '
-                      'a number you own and have confirmed with your provider.',
-                      style: AppTheme.prose(13).copyWith(color: AppTheme.muted),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  HandoutPanel(
-                    label: 'Call a number',
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Wrap(
-                          spacing: 10,
-                          runSpacing: 10,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            SizedBox(
-                              width: 240,
-                              child: TextField(
-                                controller: phoneCtrl,
-                                enabled: !dialing,
-                                style: AppTheme.prose(13),
-                                decoration: const InputDecoration(
-                                  hintText: '+91XXXXXXXXXX (verified number)',
-                                  isDense: true,
-                                ),
-                              ),
-                            ),
-                            SizedBox(
-                              width: 160,
-                              child: DropdownButtonFormField<String>(
-                                initialValue: dialLeadId,
-                                isDense: true,
-                                decoration: const InputDecoration(isDense: true),
-                                dropdownColor: AppTheme.panel,
-                                style: AppTheme.prose(13).copyWith(color: AppTheme.text),
-                                items: const [
-                                  DropdownMenuItem(value: 'EN-1001', child: Text('EN-1001')),
-                                  DropdownMenuItem(value: 'EN-1002', child: Text('EN-1002')),
-                                  DropdownMenuItem(value: 'EN-1003', child: Text('EN-1003')),
-                                ],
-                                onChanged: dialing
-                                    ? null
-                                    : (v) => setState(() => dialLeadId = v ?? dialLeadId),
-                              ),
-                            ),
-                            FilledButton.icon(
-                              onPressed: dialing ? null : _dialReal,
-                              icon: dialing
-                                  ? const SizedBox(
-                                      width: 14, height: 14,
-                                      child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.bg),
-                                    )
-                                  : const Icon(Icons.call, size: 16),
-                              label: Text(dialing ? 'DIALLING' : 'CALL'),
-                            ),
-                          ],
-                        ),
-                        if (dialStatus != null) ...[
-                          const SizedBox(height: 10),
-                          Text(dialStatus!,
-                              style: AppTheme.prose(12.5).copyWith(color: AppTheme.accent)),
-                        ],
-                        const SizedBox(height: 10),
-                        Text(
-                          'Only numbers you have already confirmed with your phone provider '
-                          'can be called.',
-                          style: AppTheme.prose(11).copyWith(color: AppTheme.faint),
-                        ),
-                      ],
-                    ),
-                  ),
 
                   const SizedBox(height: 46),
                   const SectionLabel('02', 'Non-negotiable'),

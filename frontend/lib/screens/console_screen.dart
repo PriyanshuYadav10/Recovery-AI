@@ -3,9 +3,12 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../services/api_client.dart';
 
-/// A single call, shown plainly: who it is, what's been said, and how it
-/// ended. No scores, no internal event log, no jargon panels - if something
-/// needs a label to explain what a number means, it isn't here.
+/// A scripted or typed-in-browser demo call: who it is, what's been said,
+/// how it ended. No scores, no internal event log, no jargon panels.
+///
+/// Real phone calls are watched from the lead list (/leads) instead, which
+/// has its own inline transcript - this screen only ever drives the four
+/// demo-button scenarios and the browser-typed "start live recovery" path.
 class ConsoleScreen extends StatefulWidget {
   const ConsoleScreen({super.key});
 
@@ -23,11 +26,9 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
   Map<String, dynamic> turn = {};
   List<Map<String, dynamic>> transcript = [];
   List<String> demoQueue = [];
-  bool watching = false;
   bool busy = false;
   bool live = false;
   String? banner;
-  Timer? pollTimer;
 
   @override
   void initState() {
@@ -37,7 +38,6 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
 
   @override
   void dispose() {
-    pollTimer?.cancel();
     inputCtrl.dispose();
     scrollCtrl.dispose();
     super.dispose();
@@ -46,48 +46,10 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
   Future<void> _bootstrap() async {
     final args = ModalRoute.of(context)?.settings.arguments as Map?;
     if (args == null) return;
-
-    final watchId = args['callId'] as String?;
-    if (watchId != null && args['watch'] == true) {
-      setState(() {
-        callId = watchId;
-        watching = true;
-        live = true;
-        busy = true;
-      });
-      await _pollWatchedCall();
-      if (mounted) setState(() => busy = false);
-      pollTimer = Timer.periodic(const Duration(seconds: 2), (_) => _pollWatchedCall());
-      return;
-    }
-
     final scenario = args['scenario'] as String?;
     final leadId = args['leadId'] as String? ?? 'EN-1001';
     if (args['autoStart'] == true) {
       await _start(leadId: leadId, scenario: scenario);
-    }
-  }
-
-  Future<void> _pollWatchedCall() async {
-    if (callId == null || !mounted) return;
-    try {
-      final snap = await api.getCall(callId!);
-      if (!mounted) return;
-      setState(() {
-        snapshot = snap;
-        turn = {
-          'state': snap['state'],
-          'ended': snap['state'] == 'ENDED' || snap['state'] == 'HANDOFF',
-          'handoff_ticket_id': snap['handoff_ticket_id'],
-          'receipt': snap['receipt'],
-        };
-        _ingestTranscript(snap);
-        banner = null;
-      });
-      if (turn['ended'] == true) pollTimer?.cancel();
-      _scrollToEnd();
-    } catch (e) {
-      if (mounted) setState(() => banner = "Lost contact with the call - $e");
     }
   }
 
@@ -215,8 +177,7 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
     );
   }
 
-  /// One plain sentence explaining how the call ended - the only thing that
-  /// used to take a whole "receipt" panel with an HTTP status and latency.
+  /// One plain sentence explaining how the call ended.
   Widget _outcomeBanner(String state, Map t) {
     String? message;
     Color color = AppTheme.text;
@@ -250,8 +211,7 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
     );
   }
 
-  /// What's already known, and how far along the journey is - the only two
-  /// things a normal viewer needs, shown as plain rows instead of a radar.
+  /// What's already known, and how far along the journey is.
   Widget _summaryStrip(Map fields, List progress) {
     final done = progress.where((p) => (p as Map)['status'] == 'done').length;
     final total = progress.isEmpty ? 0 : progress.length;
@@ -337,21 +297,6 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
   }
 
   Widget _composer() {
-    if (watching) {
-      return Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            const SizedBox(
-              width: 14, height: 14,
-              child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.accent),
-            ),
-            const SizedBox(width: 12),
-            Text('Listening on the phone call...', style: AppTheme.prose(13)),
-          ],
-        ),
-      );
-    }
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Row(
