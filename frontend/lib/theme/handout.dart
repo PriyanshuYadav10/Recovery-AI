@@ -72,9 +72,11 @@ class Callout extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppTheme.panel,
-        border: Border(left: BorderSide(color: AppTheme.accent, width: 4)),
+        borderRadius: const BorderRadius.horizontal(right: Radius.circular(14)),
+        border: const Border(left: BorderSide(color: AppTheme.accent, width: 4)),
+        boxShadow: AppTheme.cardShadow,
       ),
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 18),
       child: Column(
@@ -110,8 +112,8 @@ class HandoutPanel extends StatelessWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         color: AppTheme.panel,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: AppTheme.line),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: AppTheme.cardShadow,
       ),
       padding: padding,
       child: Column(

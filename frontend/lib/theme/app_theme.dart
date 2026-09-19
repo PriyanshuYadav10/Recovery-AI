@@ -10,7 +10,7 @@ import 'package:google_fonts/google_fonts.dart';
 /// grey, or a rule - nothing competes with the accent for attention.
 class AppTheme {
   // Surfaces
-  static const bg = Color(0xFFFFFFFF);
+  static const bg = Color(0xFFFCFCFE);
   static const panel = Color(0xFFF6F7FB);
   static const panelAlt = Color(0xFFEDEEF6);
 
@@ -38,6 +38,12 @@ class AppTheme {
   static const danger = accent;
   static const accent2 = body;
   static const ok = text;
+
+  /// A soft lift for panels/cards - used instead of a heavier border so
+  /// surfaces read as raised paper rather than boxes with a line around them.
+  static List<BoxShadow> cardShadow = [
+    BoxShadow(color: ink.withValues(alpha: 0.05), blurRadius: 18, offset: const Offset(0, 6)),
+  ];
 
   /// Ranking and queue bands, strongest first.
   static Color band(String value) {
@@ -123,8 +129,7 @@ class AppTheme {
         color: panel,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-          side: const BorderSide(color: line),
+          borderRadius: BorderRadius.circular(14),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(

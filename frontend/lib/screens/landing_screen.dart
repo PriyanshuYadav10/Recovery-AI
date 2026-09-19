@@ -208,24 +208,32 @@ class _LandingScreenState extends State<LandingScreen> {
     ];
   }
 
+  /// One button shape used everywhere on this page: rounded, a tinted fill
+  /// when it means something (primary action, or something waiting for
+  /// attention), plain otherwise. The fix here matters, not just the look -
+  /// the old version hard-coded white text on the orange fill, which fails
+  /// contrast on a light background (3.08:1; ink on orange is 5.84:1).
   Widget _cta(String label, VoidCallback onTap, {bool primary = false, bool accent = false}) {
     final isAccent = primary || accent;
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
-        decoration: BoxDecoration(
-          color: primary ? AppTheme.accent : Colors.transparent,
-          border: Border.all(color: isAccent ? AppTheme.accent : AppTheme.lineSoft),
-        ),
-        child: Text(
-          label,
-          style: AppTheme.mono(10.5,
-              color: primary
-                  ? AppTheme.bg
-                  : (accent ? AppTheme.accent : AppTheme.text),
-              tracking: 1.4,
-              weight: FontWeight.w700),
+    return Material(
+      color: primary ? AppTheme.accent : (accent ? AppTheme.accent.withValues(alpha: 0.08) : AppTheme.bg),
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border: primary ? null : Border.all(color: isAccent ? AppTheme.accent : AppTheme.lineSoft),
+          ),
+          child: Text(
+            label,
+            style: AppTheme.mono(10.5,
+                color: primary ? AppTheme.ink : (accent ? AppTheme.accent : AppTheme.text),
+                tracking: 1.2,
+                weight: FontWeight.w700),
+          ),
         ),
       ),
     );
