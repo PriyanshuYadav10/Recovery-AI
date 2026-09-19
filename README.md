@@ -359,6 +359,17 @@ cd telephony/bridge && npm test && npm run check
 - [CIMET_INTEGRATION_CHECKLIST.md](CIMET_INTEGRATION_CHECKLIST.md) — what
   CIMET hasn't handed over yet, and whether that's actually blocking anything
 
+## Demo controls
+
+A collapsible panel in the console (the lightning-bolt icon next to AI CALL
+RADAR) with one-click buttons: consent yes/no, busy, interrupt, low
+confidence, off-script advice, human request, frustration, payment mention,
+not interested. Every button sends a real canonical utterance through the
+exact same path as typed or spoken input — nothing bypasses the guardrails
+or the escalation engine. Exists purely so a presenter can recover instantly
+if the mic drops or an LLM call hiccups mid-demo. Never shown to a customer,
+never wired into the real call path.
+
 ## Known limitations
 
 - The Twilio leg has not been placed against live credentials; everything either side of

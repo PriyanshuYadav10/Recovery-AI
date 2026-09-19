@@ -171,7 +171,7 @@
         "escalated": true,
         "ended": true,
         "declined": false,
-        "handoff_ticket_id": "HO-47E9BD",
+        "handoff_ticket_id": "HO-E33CAE",
         "fields": {
           "postcode": "4000",
           "property_type": "house"
@@ -193,7 +193,7 @@
         "escalated": true,
         "ended": true,
         "declined": false,
-        "handoff_ticket_id": "HO-1FCA61",
+        "handoff_ticket_id": "HO-883B22",
         "fields": {
           "postcode": "4000",
           "property_type": "house"
@@ -214,7 +214,7 @@
         "escalated": true,
         "ended": true,
         "declined": false,
-        "handoff_ticket_id": "HO-9EC43D",
+        "handoff_ticket_id": "HO-A4DDB4",
         "fields": {
           "postcode": "2000"
         }
@@ -235,7 +235,7 @@
         "escalated": true,
         "ended": true,
         "declined": false,
-        "handoff_ticket_id": "HO-AB9E3C",
+        "handoff_ticket_id": "HO-D3D6E8",
         "fields": {
           "postcode": "2000"
         }

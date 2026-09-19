@@ -27,6 +27,7 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
   List<String> demoQueue = [];
   bool busy = false;
   bool live = false;
+  bool showDemoControls = false;
   String? banner;
   StreamSubscription? _voiceSub;
 
@@ -195,6 +196,7 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
               _journeyBar(progress),
               _receiptBar(),
               _timeline(audit),
+              _demoControls(),
               _composer(),
             ],
           ),
@@ -538,6 +540,74 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
             style: const TextStyle(fontSize: 11, color: AppTheme.muted),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// DEMO CONTROLS - developer-only recovery panel.
+  ///
+  /// Every button sends a real, canonical customer utterance through the
+  /// exact same `_send` path as typed or spoken input - nothing here bypasses
+  /// the conversation manager, the guardrails, or the escalation engine. This
+  /// exists purely so a presenter can recover instantly if the mic drops out
+  /// or a live LLM call hiccups mid-demo, without breaking character by
+  /// typing a full sentence. It is never shown to a customer and never wired
+  /// into the production call path.
+  Widget _demoControls() {
+    if (!showDemoControls) return const SizedBox.shrink();
+
+    Widget chip(String label, String utterance, {double conf = 0.95, Color? color}) {
+      return OutlinedButton(
+        onPressed: busy || callId == null ? null : () => _send(utterance, conf: conf),
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: (color ?? AppTheme.lineSoft)),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        ),
+        child: Text(
+          label,
+          style: AppTheme.mono(9.5, color: color ?? AppTheme.text, tracking: 0.8, weight: FontWeight.w700),
+        ),
+      );
+    }
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.panel,
+        border: Border.all(color: AppTheme.lineSoft, style: BorderStyle.solid),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.bolt, size: 14, color: AppTheme.accent),
+              const SizedBox(width: 6),
+              MonoLabel('DEMO CONTROLS - real utterances, one click', color: AppTheme.accent, size: 9),
+              const Spacer(),
+              MonoLabel('dev only', color: AppTheme.faint, size: 8.5),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              chip('CONSENT: YES', "Yes, that's fine"),
+              chip('CONSENT: NO', "No, I don't consent to that"),
+              chip('BUSY', "I'm actually at work right now"),
+              chip('INTERRUPT', 'Wait, hold on'),
+              chip('LOW CONFIDENCE', 'mumble not sure', conf: 0.3),
+              chip('OFF-SCRIPT / ADVICE', 'Which plan should I choose, what do you recommend?'),
+              chip('HUMAN REQUEST', 'Can I speak to a real person please', color: AppTheme.accent),
+              chip('FRUSTRATION', "I've already told you this twice, this is ridiculous", color: AppTheme.accent),
+              chip('PAYMENT MENTION', 'Can I just give you my card number now', color: AppTheme.accent),
+              chip('NOT INTERESTED', "I'm not interested, thanks", color: AppTheme.accent),
+            ],
           ),
         ],
       ),
