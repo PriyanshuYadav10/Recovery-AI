@@ -10,19 +10,20 @@
 
 services:
   # FastAPI "brain": conversation engine, lead scoring, compliance ledger.
-  # Needs a paid instance type because it needs a persistent disk for the
-  # SQLite DB and call recordings (Render's free tier has no disks).
+  # Free plan: no persistent disk, so the SQLite ledger and call recordings
+  # under /app/data reset on every deploy and whenever the instance spins
+  # down from idle (Render free web services sleep after ~15min of no
+  # traffic and start fresh on the next request). Fine for a demo; if the
+  # ledger needs to survive restarts, move it to a free external Postgres
+  # (e.g. Neon/Supabase) instead, or upgrade this service to a paid plan
+  # and re-add a `disk:` block mounted at /app/data.
   - type: web
     name: recovery-ai-brain
     runtime: docker
-    plan: starter
+    plan: free
     dockerfilePath: backend/Dockerfile
     dockerContext: .
     healthCheckPath: /api/health
-    disk:
-      name: recovery-ai-data
-      mountPath: /app/data
-      sizeGB: 1
     envVars:
       - key: GROQ_API_KEY
         sync: false
