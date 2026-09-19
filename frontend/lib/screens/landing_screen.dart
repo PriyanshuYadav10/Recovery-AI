@@ -53,6 +53,18 @@ class _LandingScreenState extends State<LandingScreen> {
       setState(() => dialStatus = 'Enter a real, verified number first.');
       return;
     }
+    // A bare number with no country code gets silently reinterpreted by
+    // Twilio using the account's default region - that's exactly how
+    // "7357730549" (India, +91) was dialled as +1 7357730549 (US) without
+    // any error until it hit the verified-numbers check. Refusing to send
+    // an ambiguous number is safer than trusting Twilio to guess right.
+    final digitsOnly = phone.replaceAll(RegExp(r'[^\d+]'), '');
+    if (!digitsOnly.startsWith('+') || digitsOnly.length < 8) {
+      setState(() => dialStatus =
+          "Include the country code, e.g. +91$phone - a bare number can be "
+          "silently misread as the wrong country.");
+      return;
+    }
     setState(() {
       dialing = true;
       dialStatus = 'Dialling $phone ...';

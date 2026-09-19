@@ -277,6 +277,22 @@ async def dial_call(body: DialRequest):
     if not lead:
         raise HTTPException(404, f"Unknown lead {body.lead_id}")
 
+    # A number with no country code gets silently reinterpreted by Twilio
+    # using the account's default region - "7357730549" (India, +91) was
+    # dialled as +1 7357730549 (US) with no error until the verified-numbers
+    # check caught it downstream. Reject the ambiguity here instead of
+    # trusting Twilio (or a client) to guess the right country.
+    if body.phone and not body.phone.strip().startswith("+"):
+        return {
+            "dialled": False,
+            "blocked_by": "AMBIGUOUS_PHONE_FORMAT",
+            "detail": {
+                "reason": f"'{body.phone}' has no country code (e.g. +91...). "
+                "A bare number can be silently misread as the wrong country.",
+            },
+            "lead_id": body.lead_id,
+        }
+
     gate = dnc.check(lead)
     if not gate["eligible"]:
         return {
