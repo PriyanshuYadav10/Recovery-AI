@@ -4,6 +4,17 @@ Recover dropped Energy comparison journeys with a voice-first AI agent that know
 
 **Tagline:** Recover the journey. Know when to step aside.
 
+## Live demo
+
+- **Console:** https://priyanshuyadav10.github.io/Recovery-AI/
+- **Backend API:** https://recovery-ai-brain.onrender.com
+
+Both run on free hosting (GitHub Pages + Render's free plan): the backend spins down after
+~15 minutes idle, so the first request after a quiet spell can take 30-60s to wake up, and
+the SQLite ledger/recordings reset on redeploy or spin-down. See [Containers and
+CI](#containers-and-ci) for the deploy setup (`render.yaml`,
+`.github/workflows/deploy-pages.yml`).
+
 ## Problem
 
 CIMET / econnex customers abandon the Energy comparison mid-journey. Today a human agent
@@ -288,6 +299,11 @@ is never served on the fallback by accident.
 `.github/workflows/ci.yml` runs four jobs: backend tests and demo scenarios, model
 training, the eval gate at macro-F1 0.90, bridge syntax, Flutter test and web build,
 and both Docker builds. Model metrics and the eval report upload as build artifacts.
+
+`render.yaml` deploys the brain and telephony bridge to Render's free plan (Blueprint:
+New -> Blueprint -> point at this repo). `.github/workflows/deploy-pages.yml` builds the
+Flutter console with `--dart-define=API_BASE_URL=<brain URL>` and publishes it to GitHub
+Pages on every push to `main` that touches `frontend/`.
 
 ## Setup
 
