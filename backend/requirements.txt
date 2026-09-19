@@ -1,0 +1,18 @@
+# API
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+httpx==0.28.1
+pydantic==2.10.4
+python-dotenv==1.0.1
+
+# Lead scoring model (app/ml) and the offline eval harness (evals/)
+# numpy is pinned below 2.0 because this venv runs Python 3.9, where numpy
+# 2.0.x hits the macOS Accelerate matmul bug during LogisticRegression fits.
+scikit-learn==1.6.1
+pandas==2.3.3
+numpy==1.26.4
+joblib==1.5.3
+
+# Tests
+pytest==8.3.4
+pytest-asyncio==0.25.0

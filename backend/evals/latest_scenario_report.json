@@ -1,0 +1,337 @@
+{
+  "total": 15,
+  "passed": 15,
+  "failed": 0,
+  "pass_rate": 1.0,
+  "cases": [
+    {
+      "id": "1_correct_postcode",
+      "name": "Clean answer captured first try",
+      "passed": true,
+      "notes": "A clean, unambiguous field answer must be captured first try (EN-1007 already knows postcode, so property_type is next).",
+      "expected": {
+        "fields": {
+          "property_type": "house"
+        }
+      },
+      "actual": {
+        "state": "COLLECTING",
+        "escalated": false,
+        "ended": false,
+        "declined": false,
+        "handoff_ticket_id": null,
+        "fields": {
+          "postcode": "6000",
+          "property_type": "house"
+        }
+      },
+      "failures": []
+    },
+    {
+      "id": "2_incorrect_postcode",
+      "name": "Invalid postcode is rejected, not guessed",
+      "passed": true,
+      "notes": "A 5-digit string fails the AU postcode regex and must re-ask, never invent a 4-digit guess.",
+      "expected": {
+        "state": "CLARIFYING"
+      },
+      "actual": {
+        "state": "CLARIFYING",
+        "escalated": false,
+        "ended": false,
+        "declined": false,
+        "handoff_ticket_id": null,
+        "fields": {
+          "postcode": "2000"
+        }
+      },
+      "failures": []
+    },
+    {
+      "id": "3_ambiguous_answer",
+      "name": "Ambiguous answer triggers clarification",
+      "passed": true,
+      "notes": "Nothing extractable from the utterance - the system must ask again rather than silently skip the field.",
+      "expected": {
+        "state": "CLARIFYING"
+      },
+      "actual": {
+        "state": "CLARIFYING",
+        "escalated": false,
+        "ended": false,
+        "declined": false,
+        "handoff_ticket_id": null,
+        "fields": {
+          "postcode": "2000"
+        }
+      },
+      "failures": []
+    },
+    {
+      "id": "4_customer_correction",
+      "name": "Customer self-correction overwrites the field",
+      "passed": true,
+      "notes": "Regression case: 'X, not Y' must resolve to X, not the last word mentioned.",
+      "expected": {
+        "fields": {
+          "property_type": "house"
+        }
+      },
+      "actual": {
+        "state": "CLARIFYING",
+        "escalated": false,
+        "ended": false,
+        "declined": false,
+        "handoff_ticket_id": null,
+        "fields": {
+          "postcode": "4000",
+          "property_type": "house"
+        }
+      },
+      "failures": []
+    },
+    {
+      "id": "5_interruption",
+      "name": "Interruption is acknowledged, not treated as an answer",
+      "passed": true,
+      "notes": "'wait, hold on' must not be captured as the property_type value.",
+      "expected": {
+        "fields": {
+          "property_type": "house"
+        }
+      },
+      "actual": {
+        "state": "COLLECTING",
+        "escalated": false,
+        "ended": false,
+        "declined": false,
+        "handoff_ticket_id": null,
+        "fields": {
+          "postcode": "6000",
+          "property_type": "house"
+        }
+      },
+      "failures": []
+    },
+    {
+      "id": "6_customer_busy",
+      "name": "Customer busy - offered a callback, not pressured",
+      "passed": true,
+      "notes": "Busy is not a decline - the call stays open and offers to keep it brief or call back later.",
+      "expected": {
+        "state": "COLLECTING",
+        "ended": false
+      },
+      "actual": {
+        "state": "COLLECTING",
+        "escalated": false,
+        "ended": false,
+        "declined": false,
+        "handoff_ticket_id": null,
+        "fields": {
+          "postcode": "2000"
+        }
+      },
+      "failures": []
+    },
+    {
+      "id": "7_not_interested",
+      "name": "Explicit decline ends the call without pressure",
+      "passed": true,
+      "notes": "Respect-no: thank, log, end. No retry loop, no escalation.",
+      "expected": {
+        "escalated": false,
+        "ended": true,
+        "declined": true
+      },
+      "actual": {
+        "state": "ENDED",
+        "escalated": false,
+        "ended": true,
+        "declined": true,
+        "handoff_ticket_id": null,
+        "fields": {
+          "postcode": "2000"
+        }
+      },
+      "failures": []
+    },
+    {
+      "id": "8_human_request",
+      "name": "Explicit human request escalates immediately",
+      "passed": true,
+      "notes": "HUMAN_REQUEST is a critical signal - no score threshold gate.",
+      "expected": {
+        "escalated": true,
+        "ended": true,
+        "handoff_ticket": true
+      },
+      "actual": {
+        "state": "HANDOFF",
+        "escalated": true,
+        "ended": true,
+        "declined": false,
+        "handoff_ticket_id": "HO-AD5246",
+        "fields": {
+          "postcode": "4000",
+          "property_type": "house"
+        }
+      },
+      "failures": []
+    },
+    {
+      "id": "9_frustration",
+      "name": "Escalating frustration triggers a warm handoff",
+      "passed": true,
+      "notes": "Matches the handout's own transcript pacing: two frustrated customer turns before the warm handoff, not one - a single sharp remark earns a grace turn rather than an immediate escalation.",
+      "expected": {
+        "escalated": true,
+        "handoff_ticket": true
+      },
+      "actual": {
+        "state": "HANDOFF",
+        "escalated": true,
+        "ended": true,
+        "declined": false,
+        "handoff_ticket_id": "HO-7B8334",
+        "fields": {
+          "postcode": "4000",
+          "property_type": "house"
+        }
+      },
+      "failures": []
+    },
+    {
+      "id": "10_repeated_confusion",
+      "name": "Three failed attempts on one field forces escalation",
+      "passed": true,
+      "notes": "CONFUSION streak >= 3 on the same field escalates even without anger or an explicit ask.",
+      "expected": {
+        "escalated": true
+      },
+      "actual": {
+        "state": "HANDOFF",
+        "escalated": true,
+        "ended": true,
+        "declined": false,
+        "handoff_ticket_id": "HO-E10061",
+        "fields": {
+          "postcode": "2000"
+        }
+      },
+      "failures": []
+    },
+    {
+      "id": "11_payment_or_card",
+      "name": "Payment mention escalates - never collected by voice",
+      "passed": true,
+      "notes": "SENSITIVE is critical - immediate escalation, no attempt to capture the number first.",
+      "expected": {
+        "escalated": true,
+        "handoff_ticket": true
+      },
+      "actual": {
+        "state": "HANDOFF",
+        "escalated": true,
+        "ended": true,
+        "declined": false,
+        "handoff_ticket_id": "HO-2F22A0",
+        "fields": {
+          "postcode": "2000"
+        }
+      },
+      "failures": []
+    },
+    {
+      "id": "12_off_script_question",
+      "name": "Advice question is declined, not answered",
+      "passed": true,
+      "notes": "The system collects information; it must not give product advice, and should offer a specialist instead.",
+      "expected": {
+        "state": "COLLECTING"
+      },
+      "actual": {
+        "state": "COLLECTING",
+        "escalated": false,
+        "ended": false,
+        "declined": false,
+        "handoff_ticket_id": null,
+        "fields": {
+          "postcode": "2000"
+        }
+      },
+      "failures": []
+    },
+    {
+      "id": "13_low_confidence_speech",
+      "name": "Low speech confidence triggers a re-ask",
+      "passed": true,
+      "notes": "A field answer heard at 35% speech confidence must be confirmed before being trusted, even though the words themselves parse cleanly.",
+      "expected": {
+        "state": "CLARIFYING"
+      },
+      "actual": {
+        "state": "CLARIFYING",
+        "escalated": false,
+        "ended": false,
+        "declined": false,
+        "handoff_ticket_id": null,
+        "fields": {
+          "postcode": "6000"
+        }
+      },
+      "failures": []
+    },
+    {
+      "id": "14_consent_denied",
+      "name": "Consent denied stops collection before it starts",
+      "passed": true,
+      "notes": "Nothing may be collected before consent - metadata.consent must be false and the field set empty.",
+      "expected": {
+        "ended": true,
+        "declined": true
+      },
+      "actual": {
+        "state": "ENDED",
+        "escalated": false,
+        "ended": true,
+        "declined": true,
+        "handoff_ticket_id": null,
+        "fields": {
+          "postcode": "2000"
+        }
+      },
+      "failures": []
+    },
+    {
+      "id": "15_successful_completion",
+      "name": "Full successful recovery, submitted",
+      "passed": true,
+      "notes": "The full happy path: consent -> resume -> collect -> confirm -> submit -> reference read back.",
+      "expected": {
+        "state": "ENDED",
+        "escalated": false,
+        "ended": true,
+        "min_fields": 8
+      },
+      "actual": {
+        "state": "ENDED",
+        "escalated": false,
+        "ended": true,
+        "declined": false,
+        "handoff_ticket_id": null,
+        "fields": {
+          "postcode": "3000",
+          "property_type": "apartment",
+          "ownership": "rent",
+          "current_supplier": "Origin Energy",
+          "fuel_type": "both",
+          "has_solar": "no",
+          "household_size": 2,
+          "usage_band": "medium"
+        }
+      },
+      "failures": []
+    }
+  ]
+}

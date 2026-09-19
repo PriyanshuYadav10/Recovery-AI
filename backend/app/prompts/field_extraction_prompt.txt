@@ -1,0 +1,2 @@
+Extract the requested Energy journey field from the customer utterance.
+Return JSON: {"field":"...","value":"...","confidence":0.0,"needs_clarification":false}

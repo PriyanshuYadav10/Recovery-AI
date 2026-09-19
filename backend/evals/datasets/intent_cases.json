@@ -1,0 +1,72 @@
+{
+  "description": "Labelled utterances for the intent engine. Written by hand from the handout's described caller behaviour - interruptions, 'I'm busy', 'not interested', frustration, requests for a person, payment and advice questions.",
+  "label_field": "expected_event",
+  "cases": [
+    {"text": "Yes that's fine", "state": "CONSENT", "expected_event": "CUSTOMER_CONSENT_YES"},
+    {"text": "Yeah okay go ahead", "state": "CONSENT", "expected_event": "CUSTOMER_CONSENT_YES"},
+    {"text": "Sure, that's alright", "state": "CONSENT", "expected_event": "CUSTOMER_CONSENT_YES"},
+    {"text": "That's fine by me", "state": "CONSENT", "expected_event": "CUSTOMER_CONSENT_YES"},
+    {"text": "No I'd rather you didn't record", "state": "CONSENT", "expected_event": "CUSTOMER_CONSENT_NO"},
+    {"text": "No, don't record this", "state": "CONSENT", "expected_event": "CUSTOMER_CONSENT_NO"},
+
+    {"text": "I'm not interested", "state": "COLLECTING", "expected_event": "CUSTOMER_NOT_INTERESTED"},
+    {"text": "Not interested, thanks", "state": "COLLECTING", "expected_event": "CUSTOMER_NOT_INTERESTED"},
+    {"text": "Please stop calling me", "state": "COLLECTING", "expected_event": "CUSTOMER_NOT_INTERESTED"},
+    {"text": "Take me off your list", "state": "COLLECTING", "expected_event": "CUSTOMER_NOT_INTERESTED"},
+    {"text": "Remove me from your database", "state": "COLLECTING", "expected_event": "CUSTOMER_NOT_INTERESTED"},
+    {"text": "Honestly I'm done with this, just stop calling me", "state": "COLLECTING", "expected_event": "CUSTOMER_NOT_INTERESTED"},
+
+    {"text": "Can I speak to a real person", "state": "COLLECTING", "expected_event": "CUSTOMER_HUMAN_REQUEST"},
+    {"text": "Just give me a person", "state": "COLLECTING", "expected_event": "CUSTOMER_HUMAN_REQUEST"},
+    {"text": "Put me through to a human please", "state": "COLLECTING", "expected_event": "CUSTOMER_HUMAN_REQUEST"},
+    {"text": "I want to talk to someone real", "state": "COLLECTING", "expected_event": "CUSTOMER_HUMAN_REQUEST"},
+    {"text": "Transfer me to an agent", "state": "COLLECTING", "expected_event": "CUSTOMER_HUMAN_REQUEST"},
+
+    {"text": "I'm at work right now", "state": "COLLECTING", "expected_event": "CUSTOMER_BUSY"},
+    {"text": "I'm actually driving", "state": "COLLECTING", "expected_event": "CUSTOMER_BUSY"},
+    {"text": "I'm busy at the moment", "state": "COLLECTING", "expected_event": "CUSTOMER_BUSY"},
+    {"text": "Can you call me back later", "state": "COLLECTING", "expected_event": "CUSTOMER_BUSY"},
+    {"text": "This is a bad time", "state": "COLLECTING", "expected_event": "CUSTOMER_BUSY"},
+
+    {"text": "Wait, hold on", "state": "COLLECTING", "expected_event": "CUSTOMER_INTERRUPT"},
+    {"text": "Hang on a second", "state": "COLLECTING", "expected_event": "CUSTOMER_INTERRUPT"},
+    {"text": "Wait, before that", "state": "COLLECTING", "expected_event": "CUSTOMER_INTERRUPT"},
+
+    {"text": "Actually I meant house, not apartment", "state": "COLLECTING", "expected_event": "CUSTOMER_CORRECTION"},
+    {"text": "No I said Origin, change that", "state": "COLLECTING", "expected_event": "CUSTOMER_CORRECTION"},
+    {"text": "Correction, it's actually a townhouse", "state": "COLLECTING", "expected_event": "CUSTOMER_CORRECTION"},
+    {"text": "Actually no, we rent", "state": "COLLECTING", "expected_event": "CUSTOMER_CORRECTION"},
+
+    {"text": "Do you want my credit card number", "state": "COLLECTING", "expected_event": "CUSTOMER_PAYMENT"},
+    {"text": "Can I pay by card now", "state": "COLLECTING", "expected_event": "CUSTOMER_PAYMENT"},
+    {"text": "I'll give you my bank details", "state": "COLLECTING", "expected_event": "CUSTOMER_PAYMENT"},
+    {"text": "Here's my cvv", "state": "COLLECTING", "expected_event": "CUSTOMER_PAYMENT"},
+
+    {"text": "Which plan should I choose", "state": "COLLECTING", "expected_event": "CUSTOMER_ADVICE"},
+    {"text": "What do you recommend for me", "state": "COLLECTING", "expected_event": "CUSTOMER_ADVICE"},
+    {"text": "Is this a good deal", "state": "COLLECTING", "expected_event": "CUSTOMER_ADVICE"},
+    {"text": "Should I switch providers", "state": "COLLECTING", "expected_event": "CUSTOMER_ADVICE"},
+
+    {"text": "This is ridiculous, I've told three of you already", "state": "COLLECTING", "expected_event": "CUSTOMER_ANGER"},
+    {"text": "I'm sick of these calls", "state": "COLLECTING", "expected_event": "CUSTOMER_ANGER"},
+    {"text": "This is the second call today, it's absurd", "state": "COLLECTING", "expected_event": "CUSTOMER_ANGER"},
+
+    {"text": "Sorry, what did you say", "state": "COLLECTING", "expected_event": "CUSTOMER_REPEAT"},
+    {"text": "Can you repeat that", "state": "COLLECTING", "expected_event": "CUSTOMER_REPEAT"},
+    {"text": "Pardon", "state": "COLLECTING", "expected_event": "CUSTOMER_REPEAT"},
+
+    {"text": "3000", "state": "COLLECTING", "current_field": "postcode", "expected_event": "CUSTOMER_PROVIDE_INFO"},
+    {"text": "It's a house", "state": "COLLECTING", "current_field": "property_type", "expected_event": "CUSTOMER_PROVIDE_INFO"},
+    {"text": "We own it", "state": "COLLECTING", "current_field": "ownership", "expected_event": "CUSTOMER_PROVIDE_INFO"},
+    {"text": "AGL", "state": "COLLECTING", "current_field": "current_supplier", "expected_event": "CUSTOMER_PROVIDE_INFO"},
+    {"text": "Both electricity and gas", "state": "COLLECTING", "current_field": "fuel_type", "expected_event": "CUSTOMER_PROVIDE_INFO"},
+    {"text": "Four people", "state": "COLLECTING", "current_field": "household_size", "expected_event": "CUSTOMER_PROVIDE_INFO"},
+    {"text": "Medium I'd say", "state": "COLLECTING", "current_field": "usage_band", "expected_event": "CUSTOMER_PROVIDE_INFO"},
+    {"text": "2000 thanks", "state": "COLLECTING", "current_field": "postcode", "expected_event": "CUSTOMER_PROVIDE_INFO"},
+
+    {"text": "Yes that's all correct", "state": "CONFIRMING", "expected_event": "CUSTOMER_CONFIRM_YES"},
+    {"text": "Yep that looks right", "state": "CONFIRMING", "expected_event": "CUSTOMER_CONFIRM_YES"},
+    {"text": "That's not right", "state": "CONFIRMING", "expected_event": "CUSTOMER_CONFIRM_NO"},
+    {"text": "No that's wrong", "state": "CONFIRMING", "expected_event": "CUSTOMER_CONFIRM_NO"}
+  ]
+}

@@ -1,0 +1,190 @@
+[
+  {
+    "lead_id": "EN-1001",
+    "first_name": "Priya",
+    "last_name": "Sharma",
+    "phone": "+61-400-000-101",
+    "email": "priya.test@example.com",
+    "journey": "energy",
+    "last_completed_step": "ownership",
+    "dnc_listed": false,
+    "known_fields": {
+      "postcode": "3000",
+      "property_type": "apartment",
+      "ownership": "rent"
+    },
+    "scenario_hint": "success",
+    "dropped_at": "2026-09-18T18:22:00+10:00",
+    "source": "econnex",
+    "prior_attempts": 0
+  },
+  {
+    "lead_id": "EN-1002",
+    "first_name": "Marcus",
+    "last_name": "Chen",
+    "phone": "+61-400-000-102",
+    "email": "marcus.test@example.com",
+    "journey": "energy",
+    "last_completed_step": "postcode",
+    "dnc_listed": false,
+    "known_fields": {
+      "postcode": "2000"
+    },
+    "scenario_hint": "messy",
+    "dropped_at": "2026-09-18T14:05:00+10:00",
+    "source": "campaign",
+    "prior_attempts": 1
+  },
+  {
+    "lead_id": "EN-1003",
+    "first_name": "Aisha",
+    "last_name": "Khan",
+    "phone": "+61-400-000-103",
+    "email": "aisha.test@example.com",
+    "journey": "energy",
+    "last_completed_step": "property_type",
+    "dnc_listed": false,
+    "known_fields": {
+      "postcode": "4000",
+      "property_type": "house"
+    },
+    "scenario_hint": "handoff",
+    "dropped_at": "2026-09-19T09:40:00+10:00",
+    "source": "econnex",
+    "prior_attempts": 0
+  },
+  {
+    "lead_id": "EN-1004",
+    "first_name": "Jordan",
+    "last_name": "Lee",
+    "phone": "+61-400-000-104",
+    "email": "jordan.test@example.com",
+    "journey": "energy",
+    "last_completed_step": null,
+    "dnc_listed": true,
+    "known_fields": {},
+    "scenario_hint": "dnc",
+    "dropped_at": "2026-09-17T11:00:00+10:00",
+    "source": "affiliate",
+    "prior_attempts": 0
+  },
+  {
+    "lead_id": "EN-1005",
+    "first_name": "Chloe",
+    "last_name": "Nguyen",
+    "phone": "+61-400-000-105",
+    "email": "chloe.test@example.com",
+    "journey": "energy",
+    "last_completed_step": "fuel_type",
+    "dnc_listed": false,
+    "known_fields": {
+      "postcode": "3121",
+      "property_type": "house",
+      "ownership": "own",
+      "current_supplier": "AGL",
+      "fuel_type": "both"
+    },
+    "scenario_hint": null,
+    "dropped_at": "2026-09-19T08:15:00+10:00",
+    "source": "econnex",
+    "prior_attempts": 0
+  },
+  {
+    "lead_id": "EN-1006",
+    "first_name": "Sam",
+    "last_name": "Patel",
+    "phone": "+61-400-000-106",
+    "email": "sam.test@example.com",
+    "journey": "energy",
+    "last_completed_step": "has_solar",
+    "dnc_listed": false,
+    "known_fields": {
+      "postcode": "5000",
+      "property_type": "townhouse",
+      "ownership": "own",
+      "current_supplier": "Origin",
+      "fuel_type": "electricity",
+      "has_solar": "yes"
+    },
+    "scenario_hint": null,
+    "dropped_at": "2026-09-19T07:50:00+10:00",
+    "source": "econnex",
+    "prior_attempts": 0
+  },
+  {
+    "lead_id": "EN-1007",
+    "first_name": "Ruby",
+    "last_name": "Brown",
+    "phone": "+61-400-000-107",
+    "email": "ruby.test@example.com",
+    "journey": "energy",
+    "last_completed_step": "postcode",
+    "dnc_listed": false,
+    "known_fields": {
+      "postcode": "6000"
+    },
+    "scenario_hint": null,
+    "dropped_at": "2026-09-14T22:30:00+10:00",
+    "source": "affiliate",
+    "prior_attempts": 3
+  },
+  {
+    "lead_id": "EN-1008",
+    "first_name": "Diego",
+    "last_name": "Garcia",
+    "phone": "+61-400-000-108",
+    "email": "diego.test@example.com",
+    "journey": "energy",
+    "last_completed_step": "ownership",
+    "dnc_listed": false,
+    "known_fields": {
+      "postcode": "2600",
+      "property_type": "unit",
+      "ownership": "rent"
+    },
+    "scenario_hint": null,
+    "dropped_at": "2026-09-16T13:10:00+10:00",
+    "source": "campaign",
+    "prior_attempts": 2
+  },
+  {
+    "lead_id": "EN-1009",
+    "first_name": "Mei",
+    "last_name": "Wong",
+    "phone": "+61-400-000-109",
+    "email": "mei.test@example.com",
+    "journey": "energy",
+    "last_completed_step": "household_size",
+    "dnc_listed": false,
+    "known_fields": {
+      "postcode": "4217",
+      "property_type": "apartment",
+      "ownership": "own",
+      "current_supplier": "Red Energy",
+      "fuel_type": "electricity",
+      "has_solar": "no",
+      "household_size": 3
+    },
+    "scenario_hint": null,
+    "dropped_at": "2026-09-19T06:05:00+10:00",
+    "source": "campaign",
+    "prior_attempts": 0
+  },
+  {
+    "lead_id": "EN-1010",
+    "first_name": "Omar",
+    "last_name": "Ali",
+    "phone": "+61-400-000-110",
+    "email": "omar.test@example.com",
+    "journey": "energy",
+    "last_completed_step": null,
+    "dnc_listed": true,
+    "known_fields": {
+      "postcode": "7000"
+    },
+    "scenario_hint": null,
+    "dropped_at": "2026-09-15T20:00:00+10:00",
+    "source": "affiliate",
+    "prior_attempts": 1
+  }
+]

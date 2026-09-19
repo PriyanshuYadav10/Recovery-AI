@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  backend:
+    name: Backend tests + model + evals
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        working-directory: backend
+        run: pip install -r requirements.txt
+
+      - name: Unit tests
+        working-directory: backend
+        env:
+          PYTHONPATH: .
+        run: pytest -q
+
+      - name: Demo scenarios end to end
+        working-directory: backend
+        env:
+          PYTHONPATH: .
+        run: python tests/demo_script.py
+
+      - name: Train the lead scoring model
+        working-directory: backend
+        env:
+          PYTHONPATH: .
+        run: |
+          python app/ml/dataset.py
+          python app/ml/train.py
+
+      - name: Offline evaluation gate
+        working-directory: backend
+        env:
+          PYTHONPATH: .
+        # Fails the build if intent or extraction quality regresses.
+        run: python evals/run_evals.py --fail-under 0.90
+
+      - name: Upload model metrics and eval report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: model-and-eval-reports
+          path: |
+            backend/app/ml/artifacts/metrics.json
+            backend/evals/latest_report.json
+
+  bridge:
+    name: Telephony bridge tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - working-directory: telephony/bridge
+        run: npm install
+      - working-directory: telephony/bridge
+        run: npm test
+      - working-directory: telephony/bridge
+        run: npm run check
+
+  frontend:
+    name: Flutter build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - working-directory: frontend
+        run: flutter pub get
+      - working-directory: frontend
+        run: flutter test
+      - working-directory: frontend
+        run: flutter build web --release
+
+  docker:
+    name: Docker image builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f backend/Dockerfile -t recovery-ai-brain .
+      - run: docker build -t recovery-ai-bridge ./telephony/bridge

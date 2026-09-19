@@ -1,0 +1,15 @@
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+backend/.venv/
+frontend/.dart_tool/
+frontend/build/
+frontend/.flutter-plugins-dependencies
+*.db
+.DS_Store
+.idea/
+data/recordings/
+data/recovery_ai.db

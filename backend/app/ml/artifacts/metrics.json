@@ -1,0 +1,52 @@
+{
+  "model_version": "1.0.0",
+  "algorithm": "logistic_regression",
+  "trained_at": "2026-09-18T19:11:10.977525+00:00",
+  "sklearn_feature_order": [
+    "progress_ratio",
+    "fields_completed",
+    "hours_since_drop",
+    "prior_attempts",
+    "dropped_hour",
+    "dropped_is_weekend",
+    "source"
+  ],
+  "n_rows": 4000,
+  "n_train": 3000,
+  "n_test": 1000,
+  "base_rate": 0.3068,
+  "selection": {
+    "logistic_regression": {
+      "cv_roc_auc_mean": 0.7275,
+      "cv_roc_auc_std": 0.0116
+    },
+    "gradient_boosting": {
+      "cv_roc_auc_mean": 0.7222,
+      "cv_roc_auc_std": 0.0166
+    }
+  },
+  "test": {
+    "roc_auc": 0.7228,
+    "pr_auc": 0.5289,
+    "precision": 0.5482,
+    "recall": 0.2964,
+    "f1": 0.3848,
+    "brier": 0.1849,
+    "confusion_matrix": {
+      "tn": 618,
+      "fp": 75,
+      "fn": 216,
+      "tp": 91
+    }
+  },
+  "queue": {
+    "k_fraction": 0.2,
+    "k": 200,
+    "precision_at_k": 0.545,
+    "recall_at_k": 0.355,
+    "base_rate": 0.307,
+    "lift_at_k": 1.775
+  },
+  "data_source": "synthetic (app/ml/dataset.py) - see the docstring; metrics measure pipeline correctness on a known generating process, not real-world accuracy",
+  "dataset_sha256": "b2fe1227be351fce"
+}

@@ -1,0 +1,260 @@
+{
+  "description": "Labelled field-extraction cases, including compounds, self-corrections, negations and deliberate misses. expected_value null means the extractor should capture nothing rather than guess. Supplier names must keep the spelling the journey definition uses - title-casing turned AGL into Agl and put that in the payload.",
+  "cases": [
+    {
+      "field": "postcode",
+      "text": "3000",
+      "expected_value": "3000"
+    },
+    {
+      "field": "postcode",
+      "text": "It's 2000",
+      "expected_value": "2000"
+    },
+    {
+      "field": "postcode",
+      "text": "the postcode is 4217",
+      "expected_value": "4217"
+    },
+    {
+      "field": "postcode",
+      "text": "six thousand",
+      "expected_value": null
+    },
+    {
+      "field": "postcode",
+      "text": "um I'm not sure",
+      "expected_value": null
+    },
+    {
+      "field": "property_type",
+      "text": "It's a house",
+      "expected_value": "house"
+    },
+    {
+      "field": "property_type",
+      "text": "an apartment",
+      "expected_value": "apartment"
+    },
+    {
+      "field": "property_type",
+      "text": "we live in a flat",
+      "expected_value": "apartment"
+    },
+    {
+      "field": "property_type",
+      "text": "it's a town house",
+      "expected_value": "townhouse"
+    },
+    {
+      "field": "property_type",
+      "text": "a unit",
+      "expected_value": "unit"
+    },
+    {
+      "field": "property_type",
+      "text": "a villa",
+      "expected_value": "house"
+    },
+    {
+      "field": "property_type",
+      "text": "It's a house... actually no, apartment",
+      "expected_value": "apartment"
+    },
+    {
+      "field": "property_type",
+      "text": "Actually I meant house, not apartment",
+      "expected_value": "house"
+    },
+    {
+      "field": "property_type",
+      "text": "not an apartment, a house",
+      "expected_value": "house"
+    },
+    {
+      "field": "ownership",
+      "text": "I own it",
+      "expected_value": "own"
+    },
+    {
+      "field": "ownership",
+      "text": "we're renting",
+      "expected_value": "rent"
+    },
+    {
+      "field": "ownership",
+      "text": "I'm a tenant",
+      "expected_value": "rent"
+    },
+    {
+      "field": "ownership",
+      "text": "owner occupied",
+      "expected_value": "own"
+    },
+    {
+      "field": "ownership",
+      "text": "I rent it",
+      "expected_value": "rent"
+    },
+    {
+      "field": "current_supplier",
+      "text": "AGL",
+      "expected_value": "AGL"
+    },
+    {
+      "field": "current_supplier",
+      "text": "Origin Energy",
+      "expected_value": "Origin Energy"
+    },
+    {
+      "field": "current_supplier",
+      "text": "it's Red Energy",
+      "expected_value": "Red Energy"
+    },
+    {
+      "field": "current_supplier",
+      "text": "we use Alinta",
+      "expected_value": "Alinta"
+    },
+    {
+      "field": "current_supplier",
+      "text": "agl",
+      "expected_value": "AGL"
+    },
+    {
+      "field": "current_supplier",
+      "text": "EnergyAustralia",
+      "expected_value": "EnergyAustralia"
+    },
+    {
+      "field": "current_supplier",
+      "text": "origin energy",
+      "expected_value": "Origin Energy"
+    },
+    {
+      "field": "fuel_type",
+      "text": "Both electricity and gas",
+      "expected_value": "both"
+    },
+    {
+      "field": "fuel_type",
+      "text": "just electricity",
+      "expected_value": "electricity"
+    },
+    {
+      "field": "fuel_type",
+      "text": "gas only",
+      "expected_value": "gas"
+    },
+    {
+      "field": "fuel_type",
+      "text": "dual fuel",
+      "expected_value": "both"
+    },
+    {
+      "field": "fuel_type",
+      "text": "electricity and gas please",
+      "expected_value": "both"
+    },
+    {
+      "field": "fuel_type",
+      "text": "just power",
+      "expected_value": "electricity"
+    },
+    {
+      "field": "fuel_type",
+      "text": "electric",
+      "expected_value": "electricity"
+    },
+    {
+      "field": "has_solar",
+      "text": "yes",
+      "expected_value": "yes"
+    },
+    {
+      "field": "has_solar",
+      "text": "no",
+      "expected_value": "no"
+    },
+    {
+      "field": "has_solar",
+      "text": "No solar",
+      "expected_value": "no"
+    },
+    {
+      "field": "has_solar",
+      "text": "No I don't have solar",
+      "expected_value": "no"
+    },
+    {
+      "field": "has_solar",
+      "text": "yep we have panels",
+      "expected_value": "yes"
+    },
+    {
+      "field": "has_solar",
+      "text": "nope",
+      "expected_value": "no"
+    },
+    {
+      "field": "has_solar",
+      "text": "none",
+      "expected_value": "no"
+    },
+    {
+      "field": "household_size",
+      "text": "two people",
+      "expected_value": 2
+    },
+    {
+      "field": "household_size",
+      "text": "4",
+      "expected_value": 4
+    },
+    {
+      "field": "household_size",
+      "text": "there are three of us",
+      "expected_value": 3
+    },
+    {
+      "field": "household_size",
+      "text": "just me",
+      "expected_value": null
+    },
+    {
+      "field": "household_size",
+      "text": "five",
+      "expected_value": 5
+    },
+    {
+      "field": "usage_band",
+      "text": "low",
+      "expected_value": "low"
+    },
+    {
+      "field": "usage_band",
+      "text": "medium usage",
+      "expected_value": "medium"
+    },
+    {
+      "field": "usage_band",
+      "text": "High",
+      "expected_value": "high"
+    },
+    {
+      "field": "usage_band",
+      "text": "about average",
+      "expected_value": "medium"
+    },
+    {
+      "field": "usage_band",
+      "text": "pretty moderate",
+      "expected_value": "medium"
+    },
+    {
+      "field": "usage_band",
+      "text": "we use a lot",
+      "expected_value": "high"
+    }
+  ]
+}

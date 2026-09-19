@@ -1,0 +1,23 @@
+{
+  "disclosure": "Hi {first_name}, I'm calling to help continue your Energy comparison. Before we continue, I need to let you know this call is recorded. Is that okay?",
+  "consent_denied": "Understood. Thanks for your time - I won't collect anything further. Take care.",
+  "welcome": "Thanks. I can see you started comparing Energy plans and got as far as {last_step}. I'll pick up from there so you don't have to repeat what's already on file.",
+  "recover_context": "We already have {known_fields}. Next I just need {next_field}.",
+  "busy": "No problem - I can keep this brief. Would you prefer to continue now, or should I note that a human can call you later?",
+  "not_interested": "Understood. Thanks for your time. I'll make sure we don't continue this call.",
+  "clarification": "Sorry, I want to make sure I got that right. Did you say {value}?",
+  "low_confidence": "I didn't quite catch that. Could you say that one more time?",
+  "field_ack": "Got it - {label}: {value}.",
+  "confirm_summary": "Quick check before I submit: {summary}. Does that all look right?",
+  "submitting": "Perfect. I'm submitting your Energy comparison details now.",
+  "completed": "All done - your Energy journey is recovered and submitted. Thanks for your time.",
+  "payment_handoff": "I can't take payment or card details on this automated call. I'll connect you with a person who can help safely.",
+  "advice_limit": "I can collect the details needed for your comparison, but I can't give product or financial advice. Would you like me to connect you with a specialist?",
+  "human_handoff": "Of course - I'll bring a person in now. They'll already have everything you've shared, so you won't need to repeat yourself.",
+  "frustration_handoff": "I can hear this hasn't been smooth - I'm connecting you with a teammate right away, and they'll pick up exactly where we are.",
+  "dnc_blocked": "This contact is not eligible for outbound recovery. Call aborted.",
+  "interrupt_ack": "Sure - go ahead.",
+  "correction_ack": "Thanks for correcting that. I've updated {field} to {value}.",
+  "completed_with_reference": "All done - your Energy journey is recovered and submitted. Your reference is {reference}. Thanks for your time.",
+  "handoff_queued": "I've passed everything you've told me to a teammate - they'll have it all in front of them."
+}

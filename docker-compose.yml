@@ -1,0 +1,36 @@
+services:
+  brain:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: recovery-ai-brain
+    ports:
+      - "8000:8000"
+    environment:
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_MODEL: ${GROQ_MODEL:-llama-3.3-70b-versatile}
+      JOURNEY_SUBMIT_URL: ${JOURNEY_SUBMIT_URL:-}
+      BRIDGE_BASE_URL: http://bridge:3100
+      HUMAN_QUEUE_NUMBER: ${HUMAN_QUEUE_NUMBER:-}
+    volumes:
+      # Recordings and the SQLite store survive container restarts.
+      - ./data:/app/data
+
+  bridge:
+    build:
+      context: ./telephony/bridge
+    image: recovery-ai-bridge
+    ports:
+      - "3100:3100"
+    environment:
+      RECOVERY_API_URL: http://brain:8000
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
+      VOICE_PIPELINE: ${VOICE_PIPELINE:-gather}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
+      TWILIO_PHONE_NUMBER: ${TWILIO_PHONE_NUMBER:-}
+      HUMAN_QUEUE_NUMBER: ${HUMAN_QUEUE_NUMBER:-}
+    depends_on:
+      - brain
+    # Only start the phone leg when Twilio credentials are present.
+    profiles: ["telephony"]

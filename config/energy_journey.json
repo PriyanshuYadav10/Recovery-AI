@@ -1,0 +1,184 @@
+{
+  "journey": "energy",
+  "version": "1.0.0",
+  "vertical": "Energy",
+  "description": "Australian Energy comparison dropout recovery journey",
+  "payload_shape": {
+    "lead_id": "string",
+    "journey": "energy",
+    "status": "completed|abandoned|escalated|declined",
+    "fields": "object",
+    "metadata": {
+      "consent": "boolean",
+      "ai_assisted": "boolean",
+      "dnc_checked": "boolean",
+      "recording_disclosed": "boolean"
+    }
+  },
+  "steps": [
+    {
+      "id": "postcode",
+      "section": "property",
+      "required": true,
+      "label": "Postcode",
+      "question": "What's the postcode for the property?",
+      "follow_up": "And what's the postcode there?",
+      "validation": {
+        "type": "regex",
+        "pattern": "^[0-9]{4}$",
+        "message": "Please provide a 4-digit Australian postcode."
+      },
+      "examples": [
+        "3000",
+        "2000",
+        "4000",
+        "5000"
+      ]
+    },
+    {
+      "id": "property_type",
+      "section": "property",
+      "required": true,
+      "label": "Property type",
+      "question": "Is that a house, apartment, or townhouse?",
+      "validation": {
+        "type": "enum",
+        "values": [
+          "house",
+          "apartment",
+          "townhouse",
+          "unit"
+        ],
+        "aliases": {
+          "flat": "apartment",
+          "home": "house",
+          "town house": "townhouse",
+          "villa": "house"
+        }
+      }
+    },
+    {
+      "id": "ownership",
+      "section": "property",
+      "required": true,
+      "label": "Ownership",
+      "question": "Do you own or rent the property?",
+      "validation": {
+        "type": "enum",
+        "values": [
+          "own",
+          "rent"
+        ],
+        "aliases": {
+          "owner": "own",
+          "owned": "own",
+          "renter": "rent",
+          "renting": "rent",
+          "tenant": "rent"
+        }
+      }
+    },
+    {
+      "id": "current_supplier",
+      "section": "supply",
+      "required": true,
+      "label": "Current supplier",
+      "question": "Who is your current energy supplier?",
+      "validation": {
+        "type": "text",
+        "min_length": 2
+      },
+      "examples": [
+        "AGL",
+        "Origin",
+        "EnergyAustralia",
+        "Red Energy",
+        "Alinta"
+      ]
+    },
+    {
+      "id": "fuel_type",
+      "section": "supply",
+      "required": true,
+      "label": "Fuel type",
+      "question": "Are you looking for electricity only, gas only, or both?",
+      "validation": {
+        "type": "enum",
+        "values": [
+          "electricity",
+          "gas",
+          "both"
+        ],
+        "aliases": {
+          "power": "electricity",
+          "elec": "electricity",
+          "electric": "electricity",
+          "dual": "both",
+          "dual fuel": "both",
+          "electricity and gas": "both"
+        }
+      }
+    },
+    {
+      "id": "has_solar",
+      "section": "usage",
+      "required": true,
+      "label": "Solar panels",
+      "question": "Do you have solar panels at the property?",
+      "validation": {
+        "type": "enum",
+        "values": [
+          "yes",
+          "no"
+        ],
+        "aliases": {
+          "yep": "yes",
+          "yeah": "yes",
+          "y": "yes",
+          "n": "no",
+          "nope": "no",
+          "none": "no",
+          "no solar": "no"
+        }
+      }
+    },
+    {
+      "id": "household_size",
+      "section": "usage",
+      "required": true,
+      "label": "Household size",
+      "question": "How many people live in the household?",
+      "validation": {
+        "type": "integer",
+        "min": 1,
+        "max": 20
+      }
+    },
+    {
+      "id": "usage_band",
+      "section": "usage",
+      "required": true,
+      "label": "Energy usage",
+      "question": "Would you say your energy usage is low, medium, or high?",
+      "validation": {
+        "type": "enum",
+        "values": [
+          "low",
+          "medium",
+          "high"
+        ],
+        "aliases": {
+          "average": "medium",
+          "moderate": "medium",
+          "med": "medium",
+          "lots": "high",
+          "little": "low",
+          "a lot": "high",
+          "heaps": "high",
+          "not much": "low",
+          "very little": "low"
+        }
+      }
+    }
+  ]
+}

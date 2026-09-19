@@ -1,0 +1,20 @@
+{
+  "source": "PLACEHOLDER - replace with figures measured from the CIMET recovery call recording once supplied.",
+  "measured_from": "Assumed manual ViciDial recovery call for the Energy vertical, agent-driven mode.",
+  "captured_on": "2026-09-19",
+  "manual": {
+    "average_handle_time_sec": 412,
+    "fields_typed_per_call": 8,
+    "script_lookups_per_call": 8,
+    "clarifications_per_call": 3,
+    "wrap_up_time_sec": 95,
+    "journeys_completed_per_agent_hour": 7.2,
+    "first_pass_field_accuracy": 0.91
+  },
+  "notes": [
+    "average_handle_time_sec covers dial connect to journey submit, excluding wrap-up.",
+    "fields_typed_per_call equals the 8 required Energy fields; the agent types every one.",
+    "wrap_up_time_sec is post-call notes and disposition in the console.",
+    "Replace every number here from the call recording; the comparison in /api/metrics reads this file."
+  ]
+}

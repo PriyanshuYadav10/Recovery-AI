@@ -1,0 +1,20 @@
+{
+  "name": "recovery-ai-bridge",
+  "version": "1.0.0",
+  "description": "Twilio telephony bridge for Recovery AI - puts the Energy recovery agent on a real phone call",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "check": "node --check src/server.js && node --check src/agent.js && node --check src/brain.js && node --check src/dialer.js && node --check src/config.js",
+    "test": "node --test test/audio.test.js"
+  },
+  "dependencies": {
+    "@deepgram/sdk": "^3.7.7",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "twilio": "^5.2.2",
+    "ws": "^8.18.0"
+  }
+}

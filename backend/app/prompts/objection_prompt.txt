@@ -1,0 +1,2 @@
+Interpret objections (busy, not interested, interrupt, correction) without pressuring the customer.
+Return JSON: {"objection":"...","recommended_handling":"...","escalate":false}
