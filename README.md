@@ -163,6 +163,23 @@ removed before ranking**, never ranked and skipped; and if the artifact is missi
 the scorer falls back to a documented heuristic that preserves the same ordering,
 so the API never breaks because a model was not trained.
 
+## Business scenario suite
+
+`app/evaluation/scenarios.py` drives 15 named scenarios end to end through a
+fresh `ConversationManager` each — correct answer, invalid postcode,
+ambiguous answer, customer correction, interruption, busy, decline, human
+request, frustration (two-turn, matching the handout's own transcript
+pacing), repeated confusion, payment mention, off-script advice, low speech
+confidence, consent denied, full successful completion. Each case asserts a
+specific outcome (state, escalation, fields captured) and reports PASS/FAIL,
+deterministic — no live LLM call, so a red result means a real regression.
+
+```bash
+cd backend && PYTHONPATH=. python evals/run_scenarios.py
+```
+
+Also exposed live at `GET /api/evaluation` for a judge to run on demand.
+
 ## Offline evaluation
 
 The intent engine and the field extractor decide what the agent hears, so they are
@@ -332,6 +349,15 @@ PYTHONPATH=. python evals/run_evals.py        # intent + extraction quality
 cd frontend && flutter test && flutter build web
 cd telephony/bridge && npm test && npm run check
 ```
+
+## Further reading
+
+- [ARCHITECTURE.md](ARCHITECTURE.md) — component boundaries, data flow, the
+  rules-first / LLM-assists design in detail
+- [DEMO_SCRIPT.md](DEMO_SCRIPT.md) — the timed judge presentation
+- [MANUAL_STEPS.md](MANUAL_STEPS.md) — exactly what to do yourself, file by file
+- [CIMET_INTEGRATION_CHECKLIST.md](CIMET_INTEGRATION_CHECKLIST.md) — what
+  CIMET hasn't handed over yet, and whether that's actually blocking anything
 
 ## Known limitations
 
