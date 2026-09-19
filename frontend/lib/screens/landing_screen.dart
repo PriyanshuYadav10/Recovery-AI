@@ -189,6 +189,7 @@ class _LandingScreenState extends State<LandingScreen> {
                         () => Navigator.of(context).pushNamed('/inbox').then((_) => _load()),
                         accent: waiting > 0,
                       ),
+                      _cta('EVIDENCE', () => Navigator.of(context).pushNamed('/evidence')),
                     ],
                   ),
 

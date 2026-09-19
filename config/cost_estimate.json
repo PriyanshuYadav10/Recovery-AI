@@ -1,0 +1,33 @@
+{
+  "description": "Per-call cost estimate for the AI path. AI-side unit prices are real, dated, and sourced. The human-agent comparison reuses config/manual_baseline.json's handle-time figures but needs a real fully-loaded hourly labour cost from CIMET before it means anything - that one number is a placeholder, everything else here is a cited rate times a stated assumption.",
+  "priced_on": "2026-09-19",
+  "ai_side": {
+    "llm": {
+      "provider": "Groq",
+      "model_used_in_this_build": "qwen/qwen3.8-27b",
+      "rate_source_model": "Qwen3 32B on Groq (closest publicly-priced model to the one actually used - Groq does not publish a rate for qwen3.8-27b specifically, so this is a stand-in, not a confirmed quote)",
+      "input_usd_per_million_tokens": 0.29,
+      "output_usd_per_million_tokens": 0.59,
+      "source": "https://www.cloudzero.com/blog/groq-pricing/ (accessed 2026-09-19)",
+      "assumed_tokens_per_call": {
+        "input": 3000,
+        "output": 1500,
+        "basis": "an 8-field Energy recovery conversation, ~10-15 turns - an estimate, not a measurement"
+      }
+    },
+    "telephony": {
+      "provider": "Twilio Programmable Voice, outbound",
+      "usd_per_minute": {
+        "us": 0.014,
+        "india": 0.0075
+      },
+      "source": "https://www.twilio.com/en-us/voice/pricing/us and https://www.twilio.com/en-us/voice/pricing/in (accessed 2026-09-19)",
+      "assumed_call_minutes": 2.0
+    }
+  },
+  "human_side": {
+    "handle_time_source": "config/manual_baseline.json",
+    "fully_loaded_hourly_cost_usd": "PLACEHOLDER - CIMET's real fully-loaded agent cost (wages + overhead) has not been supplied. Do not quote a dollar comparison to judges until this is a real number.",
+    "fully_loaded_hourly_cost_placeholder_value": 18.0
+  }
+}

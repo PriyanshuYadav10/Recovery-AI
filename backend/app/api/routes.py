@@ -18,6 +18,7 @@ from app.journey.submitter import JourneySubmitClient
 from app.metrics.engine import MetricsEngine
 from app.evaluation.scenarios import run_suite
 from app.experimentation.ab_test import run_all as run_ab_tests
+from app.economics.cost_estimate import compute as compute_cost_estimate
 from app.ml.scorer import LeadScorer
 from app.safety.hallucination_guard import HallucinationGuardLog
 from app.models.enums import HandoffStatus
@@ -302,6 +303,14 @@ async def ab_test_report():
     documented response-panel hypothesis, with a declared winning metric.
     See config/script_variants.json for the hypothesis behind each panel."""
     return run_ab_tests()
+
+
+@app.get("/api/economics/cost-per-call")
+async def cost_per_call():
+    """AI-side cost is a real, cited unit price (Groq + Twilio) applied to a
+    stated usage assumption. The human-side dollar figure is flagged as a
+    placeholder in the response itself - see the note field."""
+    return compute_cost_estimate()
 
 
 @app.get("/api/journey")

@@ -4,6 +4,7 @@ import 'screens/landing_screen.dart';
 import 'screens/console_screen.dart';
 import 'screens/inbox_screen.dart';
 import 'screens/leads_screen.dart';
+import 'screens/evidence_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,6 +26,7 @@ class RecoveryAiApp extends StatelessWidget {
         '/console': (_) => const ConsoleScreen(),
         '/inbox': (_) => const InboxScreen(),
         '/leads': (_) => const LeadsScreen(),
+        '/evidence': (_) => const EvidenceScreen(),
       },
     );
   }

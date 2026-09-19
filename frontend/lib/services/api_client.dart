@@ -155,6 +155,28 @@ class ApiClient {
     return jsonDecode(r.body) as Map<String, dynamic>;
   }
 
+  // ---- evidence for the jury ---------------------------------------------
+
+  Future<Map<String, dynamic>> hallucinationGuard() async {
+    final r = await http.get(_u('/api/safety/hallucination-guard'));
+    return jsonDecode(r.body) as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> abTestReport() async {
+    final r = await http.get(_u('/api/experiments/ab-test'));
+    return jsonDecode(r.body) as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> evaluationSuite() async {
+    final r = await http.get(_u('/api/evaluation'));
+    return jsonDecode(r.body) as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> costPerCall() async {
+    final r = await http.get(_u('/api/economics/cost-per-call'));
+    return jsonDecode(r.body) as Map<String, dynamic>;
+  }
+
   Future<Map<String, dynamic>> modelStatus() async {
     final r = await http.get(_u('/api/model/status'));
     return jsonDecode(r.body) as Map<String, dynamic>;
